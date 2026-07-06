@@ -174,8 +174,9 @@ type LoginResp struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Code int32  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
-	Msg  string `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`
+	Code  int32  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
+	Msg   string `protobuf:"bytes,2,opt,name=msg,proto3" json:"msg,omitempty"`
+	Token string `protobuf:"bytes,3,opt,name=token,proto3" json:"token,omitempty"`
 }
 
 func (x *LoginResp) Reset() {
@@ -220,6 +221,13 @@ func (x *LoginResp) GetCode() int32 {
 func (x *LoginResp) GetMsg() string {
 	if x != nil {
 		return x.Msg
+	}
+	return ""
+}
+
+func (x *LoginResp) GetToken() string {
+	if x != nil {
+		return x.Token
 	}
 	return ""
 }

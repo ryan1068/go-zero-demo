@@ -18,6 +18,7 @@ message LoginReq{
 message LoginResp{
   int32 code = 1;
   string msg = 2;
+  string token = 3;
 }
 
 service User {

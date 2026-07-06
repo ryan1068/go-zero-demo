@@ -5,3 +5,5 @@ Etcd:
   Hosts:
     - etcd:2379
   Key: user.rpc
+Mysql:
+  DataSource: root:PXDN93VRKUm8TeE7@tcp(mysql:3306)/looklook_usercenter?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai

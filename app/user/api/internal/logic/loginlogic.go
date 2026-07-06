@@ -2,8 +2,11 @@ package logic
 
 import (
 	"context"
+	"fmt"
+
 	"go-zero-demo/user-api/internal/svc"
 	"go-zero-demo/user-api/internal/types"
+	"go-zero-demo/user-rpc/pb/user"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -23,19 +26,20 @@ func NewLoginLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LoginLogic 
 }
 
 func (l *LoginLogic) Login(req *types.LoginReq) (resp *types.LoginResp, err error) {
-	// todo: add your logic here and delete this line
-	//s, err := l.svcCtx.UserRpc.Login(l.ctx, &user.LoginReq{
-	//	Username: req.Username,
-	//	Password: req.Password,
-	//})
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return nil, err
-	//}
+	s, err := l.svcCtx.UserRpc.Login(l.ctx, &user.LoginReq{
+		Username: req.Username,
+		Password: req.Password,
+	})
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
 
 	resp = new(types.LoginResp)
-	resp.Msg = "s.Msg"
-	resp.Code = 200
-
+	resp.Msg = s.Msg
+	resp.Code = s.Code
+	if s.Code == 200 {
+		resp.Token = fmt.Sprintf("token_%s", req.Username)
+	}
 	return
 }

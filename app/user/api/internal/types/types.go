@@ -9,8 +9,9 @@ type LoginReq struct {
 }
 
 type LoginResp struct {
-	Code int32  `json:"code"`
-	Msg  string `json:"msg"`
+	Code  int32  `json:"code"`
+	Msg   string `json:"msg"`
+	Token string `json:"token"`
 }
 
 type UserReq struct {

@@ -194,6 +194,8 @@ services:
     volumes:
       # 数据挂载 - Data mounting
       - ./data/mysql/data:/var/lib/mysql
+      # 初始化SQL
+      - ./deploy/sql/init_user.sql:/docker-entrypoint-initdb.d/01-init-user.sql
       # 日志
     command:
       # 将mysql8.0默认密码策略 修改为 原先 策略 (mysql8.0对其默认策略做了更改 会导致密码无法匹配) 
@@ -314,6 +316,18 @@ services:
       - looklook_net
     depends_on:
       - etcd
+
+  # 前端 — Vue 3 + Element Plus 后台管理
+  frontend:
+    build: ./app/frontend
+    container_name: frontend
+    ports:
+      - "80:80"
+    networks:
+      - looklook_net
+    depends_on:
+      - user-api
+      - order-api
 
 volumes:
   etcd_data:
