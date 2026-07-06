@@ -1,0 +1,26 @@
+Name: demo-gateway
+Host: 0.0.0.0
+Port: 8888
+Mode: dev
+Middlewares:
+  Metrics: true
+Upstreams:
+  - Grpc:
+      Target: etcd://etcd:2379/user.rpc
+    Mappings:
+      - Method: get
+        Path: /user/:name
+        RpcPath: user.User/User
+      - Method: post
+        Path: /user/login
+        RpcPath: user.User/Login
+
+  - Grpc:
+      Target: etcd://etcd:2379/order.rpc
+    Mappings:
+      - Method: get
+        Path: /order/:id
+        RpcPath: order.Order/GetOrder
+      - Method: post
+        Path: /order/create
+        RpcPath: order.Order/CreateOrder

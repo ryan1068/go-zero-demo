@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package order;
+option go_package = "./order";
+
+message GetOrderReq {
+  int32 id = 1;
+}
+
+message CreateOrderReq{
+  int32 goods_id = 1;
+  string goods_name = 2;
+  int32 price = 3;
+  int32 created_at = 4;
+}
+
+message CommonResp{
+  int32 code = 1;
+  string msg = 2;
+  string data = 3;
+}
+
+service Order {
+  rpc GetOrder(GetOrderReq) returns(CommonResp);
+  rpc CreateOrder(CreateOrderReq) returns (CommonResp);
+}

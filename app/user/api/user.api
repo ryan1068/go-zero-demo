@@ -1,0 +1,28 @@
+syntax = "v1"
+
+type UserReq {
+	Name string `path:"name"`
+}
+
+type UserResp {
+	Message string `json:"message"`
+}
+
+type LoginReq {
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required"`
+}
+
+type LoginResp {
+	Code int32  `json:"code"`
+	Msg  string `json:"msg"`
+}
+
+service user-api {
+	@handler UserHandler
+	get /user/:name (UserReq) returns (UserResp)
+
+	@handler LoginHandler
+	post /user/login (LoginReq) returns (LoginResp)
+}
+

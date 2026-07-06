@@ -1,0 +1,27 @@
+syntax = "v1"
+
+type GetOrderReq {
+	Id int32 `path:"id"`
+}
+
+type CreateOrderReq {
+	Goods_id   int32  `json:"goods_id"`
+	Goods_name string `json:"goods_name"`
+	Price      int32  `json:"price"`
+	Created_at int32  `json:"created_at"`
+}
+
+type CommonResp {
+	Code int32  `json:"code"`
+	Msg  string `json:"msg"`
+	Data string `json:"data"`
+}
+
+service order {
+	@handler GetOrderHandler
+	get /order/:id (GetOrderReq) returns (CommonResp)
+
+	@handler CreateOrderHandler
+	post /order/create (CreateOrderReq) returns (CommonResp)
+}
+
