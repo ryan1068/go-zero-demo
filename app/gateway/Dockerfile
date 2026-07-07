@@ -9,13 +9,13 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 RUN apk update --no-cache && apk add --no-cache tzdata
 
 WORKDIR /build
-
-ADD go.mod .
-ADD go.sum .
-RUN go mod download
 COPY . .
-COPY ./etc /app/etc
+
+WORKDIR /build/app/gateway
+RUN go mod download
 RUN go build -ldflags="-s -w" -o /app/gateway gateway.go
+
+COPY app/gateway/etc /app/etc
 
 
 FROM scratch

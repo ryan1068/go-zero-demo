@@ -3,6 +3,7 @@ module go-zero-demo/order-rpc
 go 1.23.3
 
 require (
+	go-zero-demo/pkg/errcode v0.0.0
 	github.com/zeromicro/go-zero v1.8.5
 	google.golang.org/grpc v1.74.2
 	google.golang.org/protobuf v1.36.6
@@ -94,3 +95,5 @@ require (
 require go-zero-demo/user-rpc v0.0.0
 
 replace go-zero-demo/user-rpc => ../../user/rpc
+
+replace go-zero-demo/pkg/errcode => ../../../pkg/errcode

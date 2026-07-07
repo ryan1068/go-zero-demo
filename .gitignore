@@ -20,3 +20,7 @@ Thumbs.db
 # 测试
 *.test
 *.out
+
+# MCP 配置（含密码）
+.mcp.json
+.claude/mcp.json

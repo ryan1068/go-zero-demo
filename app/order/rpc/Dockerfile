@@ -10,12 +10,12 @@ RUN apk update --no-cache && apk add --no-cache tzdata
 
 WORKDIR /build
 COPY . .
-ADD order/rpc/go.mod .
-ADD order/rpc/go.sum .
-RUN cd order/rpc && go mod download
 
-COPY order/rpc/etc /app/etc
-RUN cd order/rpc && go build -ldflags="-s -w" -o /app/order order.go
+WORKDIR /build/app/order/rpc
+RUN go mod download
+RUN go build -ldflags="-s -w" -o /app/order order.go
+
+COPY app/order/rpc/etc /app/etc
 
 
 FROM scratch

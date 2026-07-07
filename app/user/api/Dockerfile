@@ -11,11 +11,11 @@ RUN apk update --no-cache && apk add --no-cache tzdata
 WORKDIR /build
 COPY . .
 
-WORKDIR /build/user/api
+WORKDIR /build/app/user/api
 RUN go mod download
-
-COPY user/api/etc /app/etc
 RUN go build -ldflags="-s -w" -o /app/user .
+
+COPY app/user/api/etc /app/etc
 
 
 FROM scratch

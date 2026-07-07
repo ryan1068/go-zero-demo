@@ -7,6 +7,7 @@ import (
 
 	"go-zero-demo/order-rpc/internal/svc"
 	"go-zero-demo/order-rpc/pb/order"
+	"go-zero-demo/pkg/errcode"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -31,15 +32,15 @@ func (l *CreateOrderLogic) CreateOrder(in *order.CreateOrderReq) (*order.CommonR
 	user, err := l.svcCtx.UserRpc.User(l.ctx, &user.UserReq{
 		Name: in.GoodsName,
 	})
-	fmt.Println(user,111)
+	fmt.Println(user, 111)
 
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	return &order.CommonResp{
-		Msg:  "ok",
-		Code: 200,
+		Msg:  errcode.Msg(errcode.Success),
+		Code: errcode.Success,
 		Data: in.GoodsName,
 	}, nil
 }

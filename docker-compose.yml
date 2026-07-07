@@ -247,7 +247,8 @@ services:
   gateway:
     image: gateway:v1
     build:
-      context: ./app/gateway
+      context: .
+      dockerfile: app/gateway/Dockerfile
     container_name: gateway
     ports:
       - "8888:8888"
@@ -261,7 +262,8 @@ services:
   user-rpc:
     image: user-rpc:v1
     build:
-      context: ./app/user/rpc
+      context: .
+      dockerfile: app/user/rpc/Dockerfile
     container_name: user-rpc
     ports:
       - "9000:9000"
@@ -275,8 +277,8 @@ services:
   user-api:
     image: user-api:v1
     build:
-      context: ./app
-      dockerfile: user/api/Dockerfile
+      context: .
+      dockerfile: app/user/api/Dockerfile
     container_name: user-api
     ports:
       - "8000:8000"
@@ -290,8 +292,8 @@ services:
   order-rpc:
     image: order-rpc:v1
     build:
-      context: ./app
-      dockerfile: order/rpc/Dockerfile
+      context: .
+      dockerfile: app/order/rpc/Dockerfile
     container_name: order-rpc
     ports:
       - "9001:9001"
@@ -305,8 +307,8 @@ services:
   order-api:
     image: order-api:v1
     build:
-      context: ./app
-      dockerfile: order/api/Dockerfile
+      context: .
+      dockerfile: app/order/api/Dockerfile
     container_name: order-api
     ports:
       - "8001:8001"

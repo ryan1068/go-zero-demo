@@ -3,6 +3,7 @@ module go-zero-demo/user-rpc
 go 1.23.3
 
 require (
+	go-zero-demo/pkg/errcode v0.0.0
 	github.com/go-sql-driver/mysql v1.9.0
 	github.com/prometheus/client_golang v1.21.1
 	github.com/zeromicro/go-zero v1.8.5
@@ -93,3 +94,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+
+replace go-zero-demo/pkg/errcode => ../../../pkg/errcode

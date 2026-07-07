@@ -5,6 +5,7 @@ import (
 
 	"go-zero-demo/order-rpc/internal/svc"
 	"go-zero-demo/order-rpc/pb/order"
+	"go-zero-demo/pkg/errcode"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -28,7 +29,7 @@ func (l *GetOrderLogic) GetOrder(in *order.GetOrderReq) (*order.CommonResp, erro
 
 	return &order.CommonResp{
 		Msg:  "ok",
-		Code: 200,
+		Code: errcode.Success,
 		Data: "1111",
 	}, nil
 }

@@ -10,12 +10,12 @@ RUN apk update --no-cache && apk add --no-cache tzdata
 
 WORKDIR /build
 COPY . .
-ADD order/api/go.mod .
-ADD order/api/go.sum .
-RUN cd order/api && go mod download
 
-COPY ./order/api/etc /app/etc
-RUN cd order/api && go build -ldflags="-s -w" -o /app/order order.go
+WORKDIR /build/app/order/api
+RUN go mod download
+RUN go build -ldflags="-s -w" -o /app/order .
+
+COPY app/order/api/etc /app/etc
 
 
 FROM scratch
