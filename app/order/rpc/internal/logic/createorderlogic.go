@@ -2,7 +2,7 @@ package logic
 
 import (
 	"context"
-	"fmt"
+
 	"go-zero-demo/user-rpc/pb/user"
 
 	"go-zero-demo/order-rpc/internal/svc"
@@ -27,15 +27,12 @@ func NewCreateOrderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Creat
 }
 
 func (l *CreateOrderLogic) CreateOrder(in *order.CreateOrderReq) (*order.CommonResp, error) {
-	// todo: add your logic here and delete this line
-
-	user, err := l.svcCtx.UserRpc.User(l.ctx, &user.UserReq{
+	_, err := l.svcCtx.UserRpc.User(l.ctx, &user.UserReq{
 		Name: in.GoodsName,
 	})
-	fmt.Println(user, 111)
 
 	if err != nil {
-		fmt.Println(err)
+		l.Errorf("user rpc failed: %v", err)
 	}
 
 	return &order.CommonResp{

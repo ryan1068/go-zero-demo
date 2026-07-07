@@ -2,7 +2,7 @@ package logic
 
 import (
 	"context"
-	"fmt"
+
 	"go-zero-demo/user-api/internal/svc"
 	"go-zero-demo/user-api/internal/types"
 	"go-zero-demo/user-rpc/pb/user"
@@ -29,7 +29,7 @@ func (l *UserLogic) User(req *types.UserReq) (resp *types.UserResp, err error) {
 		Name: req.Name,
 	})
 	if err != nil {
-		fmt.Println(err)
+		l.Errorf("user rpc failed: %v", err)
 		return nil, err
 	}
 

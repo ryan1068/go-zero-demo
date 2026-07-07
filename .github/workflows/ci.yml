@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  go-lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module:
+          - app/user/api
+          - app/user/rpc
+          - app/order/api
+          - app/order/rpc
+          - app/gateway
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: go vet
+        working-directory: ${{ matrix.module }}
+        run: go vet ./...
+
+      - name: gofmt check
+        working-directory: ${{ matrix.module }}
+        run: test -z "$(gofmt -l . 2>&1)"
+
+  go-test:
+    needs: go-lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module:
+          - app/user/api
+          - app/user/rpc
+          - app/order/api
+          - app/order/rpc
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: go test
+        working-directory: ${{ matrix.module }}
+        run: go test ./... -v -count=1 -race
+
+  go-build:
+    needs: go-test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module:
+          - app/user/api
+          - app/user/rpc
+          - app/order/api
+          - app/order/rpc
+          - app/gateway
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: go build
+        working-directory: ${{ matrix.module }}
+        run: go build ./...
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: install dependencies
+        working-directory: app/frontend
+        run: npm ci
+
+      - name: build
+        working-directory: app/frontend
+        run: npm run build

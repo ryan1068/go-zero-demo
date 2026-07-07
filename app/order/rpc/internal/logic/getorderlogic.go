@@ -25,8 +25,6 @@ func NewGetOrderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetOrder
 }
 
 func (l *GetOrderLogic) GetOrder(in *order.GetOrderReq) (*order.CommonResp, error) {
-	// todo: add your logic here and delete this line
-
 	return &order.CommonResp{
 		Msg:  "ok",
 		Code: errcode.Success,

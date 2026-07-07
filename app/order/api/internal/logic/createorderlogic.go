@@ -25,7 +25,6 @@ func NewCreateOrderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Creat
 }
 
 func (l *CreateOrderLogic) CreateOrder(req *types.CreateOrderReq) (resp *types.CommonResp, err error) {
-	// todo: add your logic here and delete this line
 	s, err := l.svcCtx.OrderRpc.CreateOrder(l.ctx, &order.CreateOrderReq{
 		GoodsId:   req.Goods_id,
 		GoodsName: req.Goods_name,
