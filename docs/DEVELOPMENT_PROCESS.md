@@ -6,25 +6,26 @@
 
 | 级别 | 判断 | 走法 |
 |---|---|---|
-| L1 | 1-3 个文件，无接口/数据变化 | 直接改 + 相关测试 + `make check` |
-| L2 | 多文件、目标明确 | 一页计划 → 测试 → 分步实现 → 自查 + `make check` |
-| L3 | 重构、跨模块、需求模糊、数据迁移 | spec → 计划 → TDD → 分阶段 → 独立 review；部署类改动加 `make smoke` |
+| L1 | 1-3 个文件，无接口/数据变化 | 直接改 + 相关测试 + `make check`；环境可用时加 `make smoke` |
+| L2 | 多文件、目标明确 | 一页计划 → 测试 → 分步实现 → 自查 + `make check`；环境可用时加 `make smoke` |
+| L3 | 重构、跨模块、需求模糊、数据迁移 | spec → 计划 → TDD → 分阶段 → 独立 review + `make smoke` |
 
 ## 验证分层
 
 - **迭代中**：只跑改动模块的相关测试，例如 `cd app/media/api && go test ./...`
 - **提交前**：`make check`（fmt-check + build + test + lint）
 - **生成代码改动**：`make gen-check`
-- **部署/配置/路由/新服务/发布前**：`make smoke`（会登录、上传并删除测试图片，需要服务已启动）
+- **环境已启动且已部署当前代码**：改完默认跑 `make smoke`；它只要约 1 秒，是低成本的额外保险
+- **部署/配置/路由/新服务/发布前**：必须跑 `make smoke`
 
-纯业务逻辑或前端改动不要求每次跑 smoke。
+环境没启动，或代码改了但没部署时，不要用 smoke 代替 `make check`——它验证的是正在运行的服务，不是未部署的新代码。
 
 ## 流程
 
 1. **分级与计划**：明确目标、非目标、验收标准。L2 写一页计划；L3 先写 spec 到 `docs/superpowers/specs/YYYY-MM-DD-*.md`（骨架见下），再拆 3-5 步计划。
 2. **测试先行**：重构先写 characterization tests；新功能先写失败测试；数据层补集成测试。
 3. **小步实现**：迭代中跑改动模块的相关测试；提交前 `make check`；高风险步骤停下。
-4. **Review 与验收**：L2 自查 + `make check`；L3 或高风险改动才做独立上下文 review，范围限定本次 diff 涉及文件，不做全仓探索；生成代码改动加 `make gen-check`；部署/配置/路由改动或发布前跑 `make smoke`；写操作手工验证；数据变更前 `make db-backup`；清理测试数据。
+4. **Review 与验收**：L2 自查 + `make check`；环境可用时加 `make smoke`；L3 或高风险改动才做独立上下文 review，范围限定本次 diff 涉及文件，不做全仓探索；生成代码改动加 `make gen-check`；部署/配置/路由改动或发布前必须跑 `make smoke`；写操作手工验证；数据变更前 `make db-backup`；清理测试数据。
 5. **收尾**：按 PR 模板检查，更新文档，写回滚方式，开 PR。
 
 ## 停点
