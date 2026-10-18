@@ -1,7 +1,17 @@
 # go-zero-demo
 
 go-zero 微服务项目，包含 user（用户）、order（订单）服务和 gateway（网关），前端 Vue3 + Element Plus。
-开发流程（brainstorming → planning → TDD → review → finish）由 **Superpowers** 管理，本项目 CLAUDE.md 仅提供技术规范。
+开发流程由 **Superpowers** 管理，落库规范见 `docs/DEVELOPMENT_PROCESS.md` 和 `docs/DEFINITION_OF_DONE.md`。本文件只写技术约束。
+
+## 开发流程（摘要）
+
+- L1（1-3 文件）：直接改 + 相关测试 + `make check`
+- L2（明确的中等改动）：plan mode → 测试 → 分步实现 → 独立 review → `make smoke`
+- L3（重构/跨模块/需求模糊）：brainstorming → spec 入仓 → writing-plans → TDD → 分阶段 → review → finish
+- 大改没有 spec 和批准的计划，不写代码
+- 重构先写 characterization tests；新功能先写失败测试
+- 每阶段必须 `make check`；完成前独立 review + `make smoke`
+- 关键决策写入 `docs/adr/`
 
 ## 架构
 

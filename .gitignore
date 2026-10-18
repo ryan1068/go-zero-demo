@@ -27,3 +27,7 @@ Thumbs.db
 
 # 本地环境变量（含密钥）
 .env
+
+# 数据库备份
+backups/
+.gen-check.*

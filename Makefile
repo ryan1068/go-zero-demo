@@ -1,4 +1,4 @@
-.PHONY: build test test-short lint fmt protogen run clean gen gen-model gen-user-api gen-order-api gen-product-api
+.PHONY: build test test-short lint fmt fmt-check check protogen run clean gen gen-model gen-check smoke db-backup gen-user-api gen-order-api gen-product-api
 
 MODULES := app/gateway app/user/api app/user/rpc app/order/api app/order/rpc app/product/api app/product/rpc pkg/auth pkg/errcode
 
@@ -34,6 +34,26 @@ fmt:
 	@for d in $(MODULES); do \
 		(cd $$d && gofmt -w .); \
 	done
+
+fmt-check:
+	@for d in $(MODULES); do \
+		out=$$(cd $$d && gofmt -l .); \
+		if [ -n "$$out" ]; then \
+			echo "gofmt required in $$d:"; \
+			echo "$$out"; \
+			exit 1; \
+		fi; \
+	done
+	@echo "format check passed"
+
+check: fmt-check build test lint
+	@echo "all checks passed"
+
+smoke:
+	@./scripts/smoke.sh
+
+db-backup:
+	@./scripts/db-backup.sh
 
 protogen:
 	./scripts/protogen.sh
@@ -73,6 +93,9 @@ gen-order-api:
 
 gen-product-api:
 	cd app/product/api && goctl api go -api product.api -dir .
+
+gen-check:
+	@./scripts/gen-check.sh
 
 gen-user-rpc:
 	cd app/user/rpc && goctl rpc protoc user.proto --go_out=./pb --go-grpc_out=./pb --zrpc_out=.

@@ -10,9 +10,13 @@
 
 ```
 docs/
-├── architecture.md   # 系统架构
-├── api/              # API 接口文档
-└── changelog/        # 变更日志
+├── DEVELOPMENT_PROCESS.md      # 开发流程
+├── DEFINITION_OF_DONE.md       # 完成标准
+├── adr/                        # 架构决策记录
+├── superpowers/specs/          # 设计文档
+├── architecture.md             # 系统架构（待补）
+├── api/                        # API 接口文档（待补）
+└── changelog/                  # 变更日志
 ```
 
 ## 变更日志

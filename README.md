@@ -248,6 +248,21 @@ deploy/
 
 本项目使用 **Superpowers** 管理开发流程，**CLAUDE.md** 管理技术规范。
 
+开发流程与完成标准：
+
+- [docs/DEVELOPMENT_PROCESS.md](docs/DEVELOPMENT_PROCESS.md)
+- [docs/DEFINITION_OF_DONE.md](docs/DEFINITION_OF_DONE.md)
+- [docs/adr/](docs/adr/)
+
+常用命令：
+
+```bash
+make check       # 格式检查 + 构建 + 测试 + vet
+make gen-check   # 重新生成 API 代码并确认无 diff
+make smoke       # 服务启动后的只读冒烟
+make db-backup   # 备份三个数据库到 backups/
+```
+
 | 规范 | 文件 |
 |---|---|
 | 项目铁律 + Git | `CLAUDE.md` |

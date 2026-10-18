@@ -19,6 +19,8 @@ jobs:
           - app/product/api
           - app/product/rpc
           - app/gateway
+          - pkg/auth
+          - pkg/errcode
     steps:
       - uses: actions/checkout@v4
 
@@ -46,6 +48,8 @@ jobs:
           - app/order/rpc
           - app/product/api
           - app/product/rpc
+          - pkg/auth
+          - pkg/errcode
     steps:
       - uses: actions/checkout@v4
 
@@ -97,3 +101,20 @@ jobs:
       - name: build
         working-directory: app/frontend
         run: npm run build
+
+  codegen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.3"
+
+      - name: install goctl
+        run: |
+          go install github.com/zeromicro/go-zero/tools/goctl@v1.8.5
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: regenerate API code
+        run: make gen-check
