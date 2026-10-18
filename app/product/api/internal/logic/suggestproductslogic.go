@@ -21,7 +21,7 @@ func NewSuggestProductsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *S
 	return &SuggestProductsLogic{Logger: logx.WithContext(ctx), ctx: ctx, svcCtx: svcCtx}
 }
 
-func (l *SuggestProductsLogic) Suggest(req *types.SuggestReq) (*types.SuggestResp, error) {
+func (l *SuggestProductsLogic) SuggestProducts(req *types.SuggestReq) (*types.SuggestResp, error) {
 	keyword := strings.TrimSpace(req.Keyword)
 	limit := req.Limit
 	if limit < 1 {
@@ -47,22 +47,4 @@ func (l *SuggestProductsLogic) Suggest(req *types.SuggestReq) (*types.SuggestRes
 		names = append(names, item.Name)
 	}
 	return &types.SuggestResp{Code: s.Code, Msg: s.Msg, Data: names}, nil
-}
-
-type HotWordsLogic struct {
-	logx.Logger
-	ctx    context.Context
-	svcCtx *svc.ServiceContext
-}
-
-func NewHotWordsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *HotWordsLogic {
-	return &HotWordsLogic{Logger: logx.WithContext(ctx), ctx: ctx, svcCtx: svcCtx}
-}
-
-func (l *HotWordsLogic) HotWords() *types.HotWordsResp {
-	return &types.HotWordsResp{
-		Code: 200,
-		Msg:  "ok",
-		Data: []string{"Go 语言", "蓝牙耳机", "手冲咖啡", "明前龙井"},
-	}
 }

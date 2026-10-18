@@ -47,3 +47,19 @@ func adminFlag(admin bool) int32 {
 	}
 	return 0
 }
+
+func toSkuInfo(info *product.SkuInfo) types.SkuInfo {
+	return types.SkuInfo{
+		Id:            info.Id,
+		ProductId:     info.ProductId,
+		SkuCode:       info.SkuCode,
+		Specs:         info.Specs,
+		Price:         info.Price,
+		OriginalPrice: info.OriginalPrice,
+		Stock:         info.Stock,
+		Sales:         info.Sales,
+		Status:        info.Status,
+		CreatedAt:     info.CreatedAt,
+		UpdatedAt:     info.UpdatedAt,
+	}
+}

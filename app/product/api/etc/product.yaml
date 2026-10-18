@@ -13,3 +13,7 @@ Upload:
   Dir: /app/uploads
   URLPrefix: /api/product/uploads/
   MaxSizeMB: 5
+Prometheus:
+  Host: 0.0.0.0
+  Port: 9104
+  Path: /metrics

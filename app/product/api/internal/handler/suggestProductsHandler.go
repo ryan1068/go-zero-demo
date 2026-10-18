@@ -13,20 +13,16 @@ func SuggestProductsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.SuggestReq
 		if err := httpx.Parse(r, &req); err != nil {
-			writeBadRequest(w)
+			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
-		resp, err := logic.NewSuggestProductsLogic(r.Context(), svcCtx).Suggest(&req)
+
+		l := logic.NewSuggestProductsLogic(r.Context(), svcCtx)
+		resp, err := l.SuggestProducts(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
 			httpx.OkJsonCtx(r.Context(), w, resp)
 		}
-	}
-}
-
-func HotWordsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		httpx.OkJsonCtx(r.Context(), w, logic.NewHotWordsLogic(r.Context(), svcCtx).HotWords())
 	}
 }

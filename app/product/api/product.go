@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest"
 	"github.com/zeromicro/go-zero/rest/httpx"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go-zero-demo/pkg/auth"
 	"go-zero-demo/product-api/internal/config"
@@ -28,23 +29,29 @@ func main() {
 		logx.Must(err)
 	}
 
-	go func() {
-		http.Handle("/metrics", promhttp.Handler())
-		if err := http.ListenAndServe(":9104", nil); err != nil {
-			logx.Errorf("metrics server failed: %v", err)
-		}
-	}()
-
 	server := rest.MustNewServer(c.RestConf)
 	defer server.Stop()
 
 	server.Use(auth.Middleware(c.Jwt.Secret, "/categories", "/products", "/products/", "/product/", "/uploads/"))
 	httpx.SetErrorHandler(func(err error) (int, interface{}) {
-		logx.Errorf("product-api request error: %v", err)
-		return http.StatusInternalServerError, map[string]interface{}{
-			"code": http.StatusInternalServerError,
-			"msg":  "服务器内部错误",
+		if st, ok := status.FromError(err); ok {
+			switch st.Code() {
+			case codes.Unauthenticated:
+				return http.StatusUnauthorized, map[string]interface{}{"code": http.StatusUnauthorized, "msg": "未授权"}
+			case codes.PermissionDenied:
+				return http.StatusForbidden, map[string]interface{}{"code": http.StatusForbidden, "msg": "无权限"}
+			case codes.NotFound:
+				return http.StatusNotFound, map[string]interface{}{"code": http.StatusNotFound, "msg": "资源不存在"}
+			case codes.InvalidArgument:
+				return http.StatusBadRequest, map[string]interface{}{"code": http.StatusBadRequest, "msg": "请求参数错误"}
+			default:
+				logx.Errorf("product-api rpc error: %v", err)
+				return http.StatusInternalServerError, map[string]interface{}{"code": http.StatusInternalServerError, "msg": "服务器内部错误"}
+			}
 		}
+
+		logx.Errorf("product-api request error: %v", err)
+		return http.StatusBadRequest, map[string]interface{}{"code": http.StatusBadRequest, "msg": "请求参数错误"}
 	})
 
 	ctx := svc.NewServiceContext(c)

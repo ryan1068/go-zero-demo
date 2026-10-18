@@ -132,6 +132,12 @@ type UploadNameReq {
 	Name string `path:"name"`
 }
 
+type UploadResp {
+	Code int32  `json:"code"`
+	Msg  string `json:"msg"`
+	Url  string `json:"url"`
+}
+
 type UploadBatchResp {
 	Code int32    `json:"code"`
 	Msg  string   `json:"msg"`
@@ -203,18 +209,26 @@ service product-api {
 	@handler ListProductsHandler
 	get /products (ListProductsReq) returns (ListProductsResp)
 
+	@handler SuggestProductsHandler
+	get /products/suggest (SuggestReq) returns (SuggestResp)
+
+	@handler HotWordsHandler
+	get /products/hot returns (HotWordsResp)
+
 	@handler GetProductHandler
 	get /product/:id (PathIdReq) returns (ProductResp)
 
+	@handler ListSkusHandler
+	get /product/:id/skus (PathIdReq) returns (SkuListResp)
+
 	@handler ServeUploadHandler
 	get /uploads/:name (UploadNameReq) returns (BaseResp)
+}
 
-	@handler UploadBatchHandler
-	post /admin/uploads/batch returns (UploadBatchResp)
-
-	@handler DeleteUploadHandler
-	delete /admin/uploads/:name (UploadNameReq) returns (BaseResp)
-
+@server (
+	middleware: AdminOnlyMiddleware
+)
+service product-api {
 	@handler AdminListCategoriesHandler
 	get /admin/categories returns (ListCategoriesResp)
 
@@ -223,9 +237,6 @@ service product-api {
 
 	@handler UpdateCategoryHandler
 	put /admin/categories/:id (SaveCategoryReq) returns (CategoryResp)
-
-	@handler DeleteCategoryHandler
-	delete /admin/categories/:id (PathIdReq) returns (BaseResp)
 
 	@handler ProductStatsHandler
 	get /admin/products/stats returns (ProductStatsResp)
@@ -242,26 +253,34 @@ service product-api {
 	@handler UpdateProductHandler
 	put /admin/products/:id (SaveProductReq) returns (ProductResp)
 
-	@handler DeleteProductHandler
-	delete /admin/products/:id (PathIdReq) returns (BaseResp)
-
 	@handler UpdateProductStatusHandler
 	put /admin/products/:id/status (UpdateProductStatusReq) returns (BaseResp)
-
-	@handler ListSkusHandler
-	get /product/:id/skus (PathIdReq) returns (SkuListResp)
-
-	@handler SuggestProductsHandler
-	get /products/suggest (SuggestReq) returns (SuggestResp)
-
-	@handler HotWordsHandler
-	get /products/hot returns (HotWordsResp)
 
 	@handler AdminListSkusHandler
 	get /admin/products/:id/skus (PathIdReq) returns (SkuListResp)
 
 	@handler SaveSkuHandler
 	post /admin/skus (SaveSkuReq) returns (SkuResp)
+
+	@handler UploadHandler
+	post /admin/upload returns (UploadResp)
+
+	@handler UploadBatchHandler
+	post /admin/uploads/batch returns (UploadBatchResp)
+
+	@handler DeleteUploadHandler
+	delete /admin/uploads/:name (UploadNameReq) returns (BaseResp)
+}
+
+@server (
+	middleware: SuperAdminOnlyMiddleware
+)
+service product-api {
+	@handler DeleteCategoryHandler
+	delete /admin/categories/:id (PathIdReq) returns (BaseResp)
+
+	@handler DeleteProductHandler
+	delete /admin/products/:id (PathIdReq) returns (BaseResp)
 
 	@handler DeleteSkuHandler
 	delete /admin/skus/:id (SkuIdReq) returns (BaseResp)

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"go-zero-demo/pkg/errcode"
@@ -117,4 +118,51 @@ func allowedImageExt(ext string) bool {
 	default:
 		return false
 	}
+}
+
+// SaveBatch stores several uploaded images and returns their URLs.
+func (l *UploadLogic) SaveBatch(headers []*multipart.FileHeader) (*types.UploadBatchResp, error) {
+	urls := make([]string, 0, len(headers))
+	for _, header := range headers {
+		file, err := header.Open()
+		if err != nil {
+			l.Errorf("open upload file failed: %v", err)
+			return nil, err
+		}
+		resp, saveErr := l.Save(file, header)
+		if closeErr := file.Close(); closeErr != nil {
+			l.Errorf("close upload file failed: %v", closeErr)
+		}
+		if saveErr != nil {
+			return nil, saveErr
+		}
+		if resp.Code != 200 {
+			return &types.UploadBatchResp{Code: resp.Code, Msg: resp.Msg}, nil
+		}
+		urls = append(urls, resp.Url)
+	}
+	return &types.UploadBatchResp{Code: 200, Msg: "ok", Urls: urls}, nil
+}
+
+// DeleteUpload removes a stored image by its generated file name.
+func (l *UploadLogic) DeleteUpload(req *types.UploadNameReq) (*types.BaseResp, error) {
+	name := filepath.Base(req.Name)
+	if name != req.Name || !validUploadName(name) {
+		return &types.BaseResp{Code: 404, Msg: "文件不存在"}, nil
+	}
+	dir := l.svcCtx.Config.Upload.Dir
+	if dir == "" {
+		dir = "./data/uploads"
+	}
+	if err := os.Remove(filepath.Join(dir, name)); err != nil && !os.IsNotExist(err) {
+		l.Errorf("delete upload file failed: %v", err)
+		return nil, err
+	}
+	return &types.BaseResp{Code: 200, Msg: "ok"}, nil
+}
+
+var uploadNamePattern = regexp.MustCompile(`^[a-f0-9]{16}\.(jpg|jpeg|png|gif|webp)$`)
+
+func validUploadName(name string) bool {
+	return uploadNamePattern.MatchString(name)
 }
