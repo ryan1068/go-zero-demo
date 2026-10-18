@@ -253,6 +253,7 @@ deploy/
 - [docs/DEVELOPMENT_PROCESS.md](docs/DEVELOPMENT_PROCESS.md)
 - [docs/DEFINITION_OF_DONE.md](docs/DEFINITION_OF_DONE.md)
 - [docs/adr/](docs/adr/)
+- Claude Code 项目 skill：`.claude/skills/dev-process/`
 
 常用命令：
 

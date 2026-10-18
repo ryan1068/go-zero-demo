@@ -12,6 +12,7 @@ go-zero 微服务项目，包含 user（用户）、order（订单）服务和 g
 - 重构先写 characterization tests；新功能先写失败测试
 - 每阶段必须 `make check`；完成前独立 review + `make smoke`
 - 关键决策写入 `docs/adr/`
+- Claude Code skill：`.claude/skills/dev-process/SKILL.md`
 
 ## 架构
 
