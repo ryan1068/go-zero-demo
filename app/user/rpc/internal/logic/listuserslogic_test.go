@@ -15,6 +15,11 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
+const (
+	countUsersSQL = "(?i)select count\\(\\*\\) from .user. where"
+	listUsersSQL  = "(?i)select .* from .user. where .* order by .id. desc limit \\? offset \\?"
+)
+
 func newListUsersLogic(t *testing.T, db *sql.DB) *ListUsersLogic {
 	t.Helper()
 	logic := NewListUsersLogic(context.Background(), newUserServiceContext(t, db))
@@ -29,16 +34,11 @@ func TestListUsersRpc_Defaults(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM user WHERE").
+	mock.ExpectQuery(countUsersSQL).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(int64(1)))
 
-	rows := sqlmock.NewRows([]string{
-		"id", "username", "nickname", "email", "phone", "avatar", "status", "remark", "created_at", "updated_at", "role",
-	}).AddRow(
-		int64(100), "alice", "Alice", "alice@example.com", "13900000000", "", int32(1), "测试用户",
-		int64(1704067200), int64(1704067201), int32(0),
-	)
-	mock.ExpectQuery("SELECT id, username, COALESCE").
+	rows := addUserRow(newUserRows(), 100, "alice", "", "Alice", "alice@example.com", "13900000000", "", 1, "测试用户", 0)
+	mock.ExpectQuery(listUsersSQL).
 		WithArgs(int64(10), int64(0)).
 		WillReturnRows(rows)
 
@@ -65,15 +65,13 @@ func TestListUsersRpc_WithFilters(t *testing.T) {
 	defer db.Close()
 
 	args := []driver.Value{"adm%", "员%", "admin@%", "138%", int64(1)}
-	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM user WHERE").
+	mock.ExpectQuery(countUsersSQL).
 		WithArgs(args...).
 		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(int64(0)))
 	listArgs := append(append([]driver.Value{}, args...), int64(20), int64(20))
-	mock.ExpectQuery("SELECT id, username, COALESCE").
+	mock.ExpectQuery(listUsersSQL).
 		WithArgs(listArgs...).
-		WillReturnRows(sqlmock.NewRows([]string{
-			"id", "username", "nickname", "email", "phone", "avatar", "status", "remark", "created_at", "updated_at", "role",
-		}))
+		WillReturnRows(newUserRows())
 
 	resp, err := newListUsersLogic(t, db).ListUsers(&user.ListUsersReq{
 		Page:     2,
@@ -123,7 +121,7 @@ func TestListUsersRpc_CountError(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM user WHERE").
+	mock.ExpectQuery(countUsersSQL).
 		WillReturnError(errors.New("db down"))
 
 	if _, err := newListUsersLogic(t, db).ListUsers(&user.ListUsersReq{}); err == nil {

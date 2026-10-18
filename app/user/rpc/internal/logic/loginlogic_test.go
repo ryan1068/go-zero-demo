@@ -8,8 +8,6 @@ import (
 
 	"go-zero-demo/pkg/auth"
 	"go-zero-demo/pkg/errcode"
-	"go-zero-demo/user-rpc/internal/config"
-	"go-zero-demo/user-rpc/internal/svc"
 	"go-zero-demo/user-rpc/pb/user"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -17,17 +15,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const testSecret = "0123456789abcdef0123456789abcdef"
-
-func newLoginServiceContext(t *testing.T, db *sql.DB) *svc.ServiceContext {
-	t.Helper()
-	return &svc.ServiceContext{
-		DB: db,
-		Config: config.Config{
-			Jwt: config.JwtConfig{Secret: testSecret, ExpireHours: 24},
-		},
-	}
-}
+const updateLastLoginSQL = "(?i)update .user. set .last_login_at."
 
 func TestLoginRpc_Success(t *testing.T) {
 	db, mock, err := sqlmock.New()
@@ -40,16 +28,15 @@ func TestLoginRpc_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to hash password: %v", err)
 	}
-	rows := sqlmock.NewRows([]string{"id", "username", "password", "status", "role"}).
-		AddRow(1, "admin", string(hash), 1, 1)
-	mock.ExpectQuery("SELECT id, username, password, status, role FROM user WHERE username = \\?").
+	rows := addUserRow(newUserRows(), 1, "admin", string(hash), "", "", "", "", 1, "", 1)
+	mock.ExpectQuery(findUserByUsernameSQL).
 		WithArgs("admin").
 		WillReturnRows(rows)
-	mock.ExpectExec("UPDATE user SET last_login_at").
+	mock.ExpectExec(updateLastLoginSQL).
 		WithArgs(int64(1)).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	logic := NewLoginLogic(context.Background(), newLoginServiceContext(t, db))
+	logic := NewLoginLogic(context.Background(), newUserServiceContext(t, db))
 	logic.Logger = logx.WithContext(context.Background())
 
 	resp, err := logic.Login(&user.LoginReq{
@@ -93,13 +80,12 @@ func TestLoginRpc_WrongPassword(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to hash password: %v", err)
 	}
-	rows := sqlmock.NewRows([]string{"id", "username", "password", "status", "role"}).
-		AddRow(1, "admin", string(hash), 1, 0)
-	mock.ExpectQuery("SELECT id, username, password, status, role FROM user WHERE username = \\?").
+	rows := addUserRow(newUserRows(), 1, "admin", string(hash), "", "", "", "", 1, "", 0)
+	mock.ExpectQuery(findUserByUsernameSQL).
 		WithArgs("admin").
 		WillReturnRows(rows)
 
-	logic := NewLoginLogic(context.Background(), newLoginServiceContext(t, db))
+	logic := NewLoginLogic(context.Background(), newUserServiceContext(t, db))
 	logic.Logger = logx.WithContext(context.Background())
 
 	resp, err := logic.Login(&user.LoginReq{
@@ -124,11 +110,11 @@ func TestLoginRpc_UserNotFound(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectQuery("SELECT id, username, password, status, role FROM user WHERE username = \\?").
+	mock.ExpectQuery(findUserByUsernameSQL).
 		WithArgs("unknown").
 		WillReturnError(sql.ErrNoRows)
 
-	logic := NewLoginLogic(context.Background(), newLoginServiceContext(t, db))
+	logic := NewLoginLogic(context.Background(), newUserServiceContext(t, db))
 	logic.Logger = logx.WithContext(context.Background())
 
 	resp, err := logic.Login(&user.LoginReq{
@@ -150,11 +136,11 @@ func TestLoginRpc_DatabaseError(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectQuery("SELECT id, username, password, status, role FROM user WHERE username = \\?").
+	mock.ExpectQuery(findUserByUsernameSQL).
 		WithArgs("admin").
 		WillReturnError(errors.New("db down"))
 
-	logic := NewLoginLogic(context.Background(), newLoginServiceContext(t, db))
+	logic := NewLoginLogic(context.Background(), newUserServiceContext(t, db))
 	logic.Logger = logx.WithContext(context.Background())
 
 	if _, err := logic.Login(&user.LoginReq{Username: "admin", Password: "123456"}); err == nil {
@@ -169,7 +155,7 @@ func TestLoginRpc_EmptyUsername(t *testing.T) {
 	}
 	defer db.Close()
 
-	logic := NewLoginLogic(context.Background(), newLoginServiceContext(t, db))
+	logic := NewLoginLogic(context.Background(), newUserServiceContext(t, db))
 	logic.Logger = logx.WithContext(context.Background())
 
 	resp, err := logic.Login(&user.LoginReq{Username: "  ", Password: "123456"})

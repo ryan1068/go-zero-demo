@@ -2,7 +2,6 @@ package logic
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
@@ -12,6 +11,7 @@ import (
 	"go-zero-demo/user-rpc/pb/user"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
 type UpdateUserRoleLogic struct {
@@ -28,27 +28,25 @@ func (l *UpdateUserRoleLogic) UpdateUserRole(in *user.UpdateUserRoleReq) (*user.
 	if in.Id <= 0 || (in.Role != 0 && in.Role != 1 && in.Role != 2) {
 		return &user.BaseResp{Code: errcode.BadRequest, Msg: errcode.Msg(errcode.BadRequest)}, nil
 	}
-	result, err := l.svcCtx.DB.ExecContext(l.ctx,
-		"UPDATE user SET role = ? WHERE id = ?", in.Role, in.Id,
-	)
+	affected, err := l.svcCtx.UserModel.UpdateRole(l.ctx, in.Id, int64(in.Role))
 	if err != nil {
 		l.Errorf("update user role failed: %v", err)
 		return nil, err
 	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		l.Errorf("read affected rows failed: %v", err)
-		return nil, err
-	}
 	if affected == 0 {
-		if _, err := findUserByID(l.ctx, l.svcCtx.DB, in.Id); errors.Is(err, sql.ErrNoRows) {
+		_, err := l.svcCtx.UserModel.FindOne(l.ctx, in.Id)
+		if errors.Is(err, sqlx.ErrNotFound) {
 			return &user.BaseResp{Code: errcode.NotFound, Msg: errcode.Msg(errcode.NotFound)}, nil
-		} else if err != nil {
+		}
+		if err != nil {
 			l.Errorf("query user failed: %v", err)
 			return nil, err
 		}
 	}
+
 	adminID, _ := auth.UserIDFromIncoming(l.ctx)
-	auth.Audit(l.ctx, l.svcCtx.DB, adminID, "update_user_role", "user", in.Id, fmt.Sprintf("role=%d", in.Role))
+	if err := l.svcCtx.AdminAuditLogModel.InsertAudit(l.ctx, adminID, "update_user_role", "user", in.Id, fmt.Sprintf("role=%d", in.Role)); err != nil {
+		l.Errorf("write audit log failed: %v", err)
+	}
 	return &user.BaseResp{Code: errcode.Success, Msg: errcode.Msg(errcode.Success)}, nil
 }

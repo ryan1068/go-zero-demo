@@ -2,8 +2,8 @@ package logic
 
 import (
 	"context"
-	"database/sql"
 	"errors"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 
@@ -11,17 +11,25 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"go-zero-demo/pkg/errcode"
+	"go-zero-demo/user-rpc/internal/model"
+	"go-zero-demo/user-rpc/internal/svc"
 	"go-zero-demo/user-rpc/pb/user"
 )
 
 const (
-	userSelectColumns = "id, username, COALESCE(nickname, ''), COALESCE(email, ''), COALESCE(phone, ''), COALESCE(avatar, ''), status, COALESCE(remark, ''), UNIX_TIMESTAMP(created_at), UNIX_TIMESTAMP(updated_at), role"
+	minUsernameLength = 3
+	maxUsernameLength = 64
+	minPasswordLength = 6
+	maxPasswordLength = 72
+	maxNicknameLength = 255
+	maxEmailLength    = 128
+	maxPhoneLength    = 32
+	maxAvatarLength   = 512
+	maxRemarkLength   = 255
 	mysqlDuplicateKey = 1062
 )
 
-type rowScanner interface {
-	Scan(dest ...any) error
-}
+var emailPattern = regexp.MustCompile(`^[^@\s]+@[^@\s]+\.[^@\s]+$`)
 
 type createUserParams struct {
 	Username string
@@ -35,36 +43,9 @@ type createUserParams struct {
 	Role     int32
 }
 
-func scanUserInfo(row rowScanner) (*user.UserInfo, error) {
-	info := new(user.UserInfo)
-	err := row.Scan(
-		&info.Id,
-		&info.Username,
-		&info.Nickname,
-		&info.Email,
-		&info.Phone,
-		&info.Avatar,
-		&info.Status,
-		&info.Remark,
-		&info.CreatedAt,
-		&info.UpdatedAt,
-		&info.Role,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return info, nil
-}
-
-func findUserByID(ctx context.Context, db *sql.DB, id int64) (*user.UserInfo, error) {
-	return scanUserInfo(db.QueryRowContext(ctx,
-		"SELECT "+userSelectColumns+" FROM user WHERE id = ?", id,
-	))
-}
-
-// createUser inserts a user and returns the persisted record. The returned
-// code is Success, Conflict or BadRequest when the failure is a business error.
-func createUser(ctx context.Context, db *sql.DB, p createUserParams) (*user.UserInfo, int32, error) {
+// createUser validates, hashes and persists a user, then returns the stored record.
+// The returned code is Success, Conflict or BadRequest for business outcomes.
+func createUser(ctx context.Context, svcCtx *svc.ServiceContext, p createUserParams) (*user.UserInfo, int32, error) {
 	username := strings.TrimSpace(p.Username)
 	nickname := strings.TrimSpace(p.Nickname)
 	email := strings.TrimSpace(p.Email)
@@ -81,10 +62,17 @@ func createUser(ctx context.Context, db *sql.DB, p createUserParams) (*user.User
 		return nil, errcode.ServerError, err
 	}
 
-	result, err := db.ExecContext(ctx,
-		"INSERT INTO user (username, password, nickname, email, phone, avatar, status, role, remark) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		username, string(hash), nickname, email, phone, avatar, p.Status, p.Role, remark,
-	)
+	result, err := svcCtx.UserModel.Insert(ctx, &model.User{
+		Username: username,
+		Password: string(hash),
+		Nickname: nickname,
+		Email:    email,
+		Phone:    phone,
+		Avatar:   avatar,
+		Status:   int64(p.Status),
+		Remark:   remark,
+		Role:     int64(p.Role),
+	})
 	if err != nil {
 		var mysqlErr *mysqlDriver.MySQLError
 		if errors.As(err, &mysqlErr) && mysqlErr.Number == mysqlDuplicateKey {
@@ -98,11 +86,11 @@ func createUser(ctx context.Context, db *sql.DB, p createUserParams) (*user.User
 		return nil, errcode.ServerError, err
 	}
 
-	info, err := findUserByID(ctx, db, id)
+	stored, err := svcCtx.UserModel.FindOne(ctx, id)
 	if err != nil {
 		return nil, errcode.ServerError, err
 	}
-	return info, errcode.Success, nil
+	return toUserInfo(stored), errcode.Success, nil
 }
 
 func validCreateUserInput(username, password, nickname, email, phone, avatar, remark string, status, role int32) bool {

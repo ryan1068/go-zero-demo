@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"go-zero-demo/pkg/errcode"
+	"go-zero-demo/user-rpc/internal/model"
 	"go-zero-demo/user-rpc/internal/svc"
 	"go-zero-demo/user-rpc/pb/user"
 
@@ -34,61 +35,32 @@ func (l *ListAuditLogsLogic) ListAuditLogs(in *user.ListAuditLogsReq) (*user.Lis
 		pageSize = 100
 	}
 
-	where := []string{"1 = 1"}
-	args := make([]any, 0, 3)
-	if in.AdminId > 0 {
-		where = append(where, "a.admin_id = ?")
-		args = append(args, in.AdminId)
-	}
-	if action := strings.TrimSpace(in.Action); action != "" {
-		where = append(where, "a.action = ?")
-		args = append(args, action)
-	}
-	if targetType := strings.TrimSpace(in.TargetType); targetType != "" {
-		where = append(where, "a.target_type = ?")
-		args = append(args, targetType)
-	}
-	condition := strings.Join(where, " AND ")
-
-	var total int64
-	if err := l.svcCtx.DB.QueryRowContext(l.ctx,
-		"SELECT COUNT(*) FROM admin_audit_log a WHERE "+condition, args...,
-	).Scan(&total); err != nil {
-		l.Errorf("count audit logs failed: %v", err)
-		return nil, err
-	}
-
-	offset := int64(page-1) * int64(pageSize)
-	listArgs := append(append([]any{}, args...), int64(pageSize), offset)
-	rows, err := l.svcCtx.DB.QueryContext(l.ctx,
-		"SELECT a.id, a.admin_id, COALESCE(u.username, ''), a.action, a.target_type, a.target_id, a.detail, UNIX_TIMESTAMP(a.created_at)"+
-			" FROM admin_audit_log a LEFT JOIN user u ON u.id = a.admin_id"+
-			" WHERE "+condition+" ORDER BY a.id DESC LIMIT ? OFFSET ?",
-		listArgs...,
-	)
+	rows, total, err := l.svcCtx.AdminAuditLogModel.ListAuditLogs(l.ctx, model.AuditLogFilter{
+		AdminID:    in.AdminId,
+		Action:     strings.TrimSpace(in.Action),
+		TargetType: strings.TrimSpace(in.TargetType),
+		Page:       int64(page),
+		PageSize:   int64(pageSize),
+	})
 	if err != nil {
 		l.Errorf("query audit logs failed: %v", err)
 		return nil, err
 	}
-	defer func() {
-		if closeErr := rows.Close(); closeErr != nil {
-			l.Errorf("close audit log rows failed: %v", closeErr)
-		}
-	}()
 
-	list := make([]*user.AuditLogInfo, 0, pageSize)
-	for rows.Next() {
-		item := new(user.AuditLogInfo)
-		if err := rows.Scan(&item.Id, &item.AdminId, &item.AdminName, &item.Action, &item.TargetType, &item.TargetId, &item.Detail, &item.CreatedAt); err != nil {
-			l.Errorf("scan audit log failed: %v", err)
-			return nil, err
-		}
-		list = append(list, item)
+	list := make([]*user.AuditLogInfo, 0, len(rows))
+	for _, row := range rows {
+		list = append(list, &user.AuditLogInfo{
+			Id:         row.Id,
+			AdminId:    row.AdminId,
+			Action:     row.Action,
+			TargetType: row.TargetType,
+			TargetId:   row.TargetId,
+			Detail:     row.Detail,
+			CreatedAt:  row.CreatedAt,
+			AdminName:  row.AdminName,
+		})
 	}
-	if err := rows.Err(); err != nil {
-		l.Errorf("iterate audit logs failed: %v", err)
-		return nil, err
-	}
+
 	return &user.ListAuditLogsResp{
 		Code:     errcode.Success,
 		Msg:      errcode.Msg(errcode.Success),

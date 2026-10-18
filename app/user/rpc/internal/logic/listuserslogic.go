@@ -6,6 +6,7 @@ import (
 	"unicode/utf8"
 
 	"go-zero-demo/pkg/errcode"
+	"go-zero-demo/user-rpc/internal/model"
 	"go-zero-demo/user-rpc/internal/svc"
 	"go-zero-demo/user-rpc/pb/user"
 
@@ -58,76 +59,29 @@ func (l *ListUsersLogic) ListUsers(in *user.ListUsersReq) (*user.ListUsersResp, 
 		}, nil
 	}
 
-	where := []string{"1 = 1"}
-	args := make([]any, 0, 5)
-	if username != "" {
-		where = append(where, "username LIKE ?")
-		args = append(args, username+"%")
-	}
-	if nickname != "" {
-		where = append(where, "nickname LIKE ?")
-		args = append(args, nickname+"%")
-	}
-	if email != "" {
-		where = append(where, "email LIKE ?")
-		args = append(args, email+"%")
-	}
-	if phone != "" {
-		where = append(where, "phone LIKE ?")
-		args = append(args, phone+"%")
-	}
-	// status: 0 = all, 1 = active, 2 = disabled
-	switch in.Status {
-	case 1:
-		where = append(where, "status = ?")
-		args = append(args, 1)
-	case 2:
-		where = append(where, "status = ?")
-		args = append(args, 0)
-	}
-	condition := strings.Join(where, " AND ")
-
-	var total int64
-	countQuery := "SELECT COUNT(*) FROM user WHERE " + condition
-	if err := l.svcCtx.DB.QueryRowContext(l.ctx, countQuery, args...).Scan(&total); err != nil {
-		l.Errorf("count users failed: %v", err)
-		return nil, err
-	}
-
-	offset := int64(page-1) * int64(pageSize)
-	listArgs := append(append([]any{}, args...), int64(pageSize), offset)
-	rows, err := l.svcCtx.DB.QueryContext(l.ctx,
-		"SELECT "+userSelectColumns+" FROM user WHERE "+condition+" ORDER BY id DESC LIMIT ? OFFSET ?",
-		listArgs...,
-	)
+	list, total, err := l.svcCtx.UserModel.FindUsers(l.ctx, model.UserFilter{
+		Username: username,
+		Nickname: nickname,
+		Email:    email,
+		Phone:    phone,
+		Status:   int64(in.Status),
+		Page:     int64(page),
+		PageSize: int64(pageSize),
+	})
 	if err != nil {
 		l.Errorf("query users failed: %v", err)
 		return nil, err
 	}
-	defer func() {
-		if closeErr := rows.Close(); closeErr != nil {
-			l.Errorf("close user rows failed: %v", closeErr)
-		}
-	}()
 
-	list := make([]*user.UserInfo, 0, pageSize)
-	for rows.Next() {
-		info, err := scanUserInfo(rows)
-		if err != nil {
-			l.Errorf("scan user failed: %v", err)
-			return nil, err
-		}
-		list = append(list, info)
-	}
-	if err := rows.Err(); err != nil {
-		l.Errorf("iterate users failed: %v", err)
-		return nil, err
+	items := make([]*user.UserInfo, 0, len(list))
+	for _, item := range list {
+		items = append(items, toUserInfo(item))
 	}
 
 	return &user.ListUsersResp{
 		Code:     errcode.Success,
 		Msg:      errcode.Msg(errcode.Success),
-		List:     list,
+		List:     items,
 		Total:    total,
 		Page:     page,
 		PageSize: pageSize,

@@ -2,7 +2,6 @@ package logic
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 
 	"go-zero-demo/pkg/auth"
@@ -11,6 +10,7 @@ import (
 	"go-zero-demo/user-rpc/pb/user"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -37,18 +37,15 @@ func (l *ChangePasswordLogic) ChangePassword(in *user.ChangePasswordReq) (*user.
 		return &user.BaseResp{Code: errcode.BadRequest, Msg: "新密码不能与原密码相同"}, nil
 	}
 
-	var password string
-	err := l.svcCtx.DB.QueryRowContext(l.ctx,
-		"SELECT password FROM user WHERE id = ?", userID,
-	).Scan(&password)
+	stored, err := l.svcCtx.UserModel.FindOne(l.ctx, userID)
 	switch {
-	case errors.Is(err, sql.ErrNoRows):
+	case errors.Is(err, sqlx.ErrNotFound):
 		return &user.BaseResp{Code: errcode.NotFound, Msg: errcode.Msg(errcode.NotFound)}, nil
 	case err != nil:
 		l.Errorf("query password failed: %v", err)
 		return nil, err
 	}
-	if err := bcrypt.CompareHashAndPassword([]byte(password), []byte(in.OldPassword)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(stored.Password), []byte(in.OldPassword)); err != nil {
 		return &user.BaseResp{Code: errcode.Unauthorized, Msg: "原密码错误"}, nil
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(in.NewPassword), bcrypt.DefaultCost)
@@ -56,9 +53,7 @@ func (l *ChangePasswordLogic) ChangePassword(in *user.ChangePasswordReq) (*user.
 		l.Errorf("hash new password failed: %v", err)
 		return nil, err
 	}
-	if _, err := l.svcCtx.DB.ExecContext(l.ctx,
-		"UPDATE user SET password = ?, updated_at = NOW() WHERE id = ?", string(hash), userID,
-	); err != nil {
+	if err := l.svcCtx.UserModel.UpdatePassword(l.ctx, userID, string(hash)); err != nil {
 		l.Errorf("update password failed: %v", err)
 		return nil, err
 	}

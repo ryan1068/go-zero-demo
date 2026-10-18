@@ -1,6 +1,9 @@
 package config
 
-import "github.com/zeromicro/go-zero/zrpc"
+import (
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
+	"github.com/zeromicro/go-zero/zrpc"
+)
 
 // JwtConfig holds token signing settings.
 type JwtConfig struct {
@@ -10,8 +13,6 @@ type JwtConfig struct {
 
 type Config struct {
 	zrpc.RpcServerConf
-	Mysql struct {
-		DataSource string
-	}
-	Jwt JwtConfig
+	Mysql sqlx.SqlConf
+	Jwt   JwtConfig
 }

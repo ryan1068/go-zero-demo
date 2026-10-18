@@ -7,23 +7,13 @@ import (
 	"testing"
 
 	"go-zero-demo/pkg/errcode"
-	"go-zero-demo/user-rpc/internal/config"
-	"go-zero-demo/user-rpc/internal/svc"
 	"go-zero-demo/user-rpc/pb/user"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-func newUserServiceContext(t *testing.T, db *sql.DB) *svc.ServiceContext {
-	t.Helper()
-	return &svc.ServiceContext{
-		DB: db,
-		Config: config.Config{
-			Jwt: config.JwtConfig{Secret: testSecret, ExpireHours: 24},
-		},
-	}
-}
+const findUserByUsernameSQL = "(?i)select .* from .user. where .username. = \\? limit 1"
 
 func TestUserRpc_Success(t *testing.T) {
 	db, mock, err := sqlmock.New()
@@ -32,13 +22,8 @@ func TestUserRpc_Success(t *testing.T) {
 	}
 	defer db.Close()
 
-	rows := sqlmock.NewRows([]string{
-		"id", "username", "nickname", "email", "phone", "avatar", "status", "remark", "created_at", "updated_at", "role",
-	}).AddRow(
-		int64(1), "admin", "管理员", "admin@example.com", "13800000000", "", int32(1), "系统管理员",
-		int64(1704067200), int64(1704067201), int32(1),
-	)
-	mock.ExpectQuery("SELECT id, username, COALESCE").
+	rows := addUserRow(newUserRows(), 1, "admin", "", "管理员", "admin@example.com", "13800000000", "", 1, "系统管理员", 1)
+	mock.ExpectQuery(findUserByUsernameSQL).
 		WithArgs("admin").
 		WillReturnRows(rows)
 
@@ -92,7 +77,7 @@ func TestUserRpc_NotFound(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectQuery("SELECT id, username, COALESCE").
+	mock.ExpectQuery(findUserByUsernameSQL).
 		WithArgs("ghost").
 		WillReturnError(sql.ErrNoRows)
 
@@ -115,7 +100,7 @@ func TestUserRpc_DatabaseError(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectQuery("SELECT id, username, COALESCE").
+	mock.ExpectQuery(findUserByUsernameSQL).
 		WithArgs("admin").
 		WillReturnError(errors.New("db down"))
 

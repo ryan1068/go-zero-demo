@@ -2,7 +2,6 @@ package logic
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"strings"
 
@@ -11,6 +10,7 @@ import (
 	"go-zero-demo/user-rpc/pb/user"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
 type UserLogic struct {
@@ -36,11 +36,9 @@ func (l *UserLogic) User(in *user.UserReq) (*user.UserResp, error) {
 		}, nil
 	}
 
-	info, err := scanUserInfo(l.svcCtx.DB.QueryRowContext(l.ctx,
-		"SELECT "+userSelectColumns+" FROM user WHERE username = ?", name,
-	))
+	stored, err := l.svcCtx.UserModel.FindOneByUsername(l.ctx, name)
 	switch {
-	case errors.Is(err, sql.ErrNoRows):
+	case errors.Is(err, sqlx.ErrNotFound):
 		return &user.UserResp{
 			Code: errcode.NotFound,
 			Msg:  errcode.Msg(errcode.NotFound),
@@ -53,6 +51,6 @@ func (l *UserLogic) User(in *user.UserReq) (*user.UserResp, error) {
 	return &user.UserResp{
 		Code: errcode.Success,
 		Msg:  errcode.Msg(errcode.Success),
-		Data: info,
+		Data: toUserInfo(stored),
 	}, nil
 }

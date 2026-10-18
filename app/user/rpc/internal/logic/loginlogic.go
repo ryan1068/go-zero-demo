@@ -2,7 +2,6 @@ package logic
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"strings"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"go-zero-demo/user-rpc/pb/user"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -39,19 +39,9 @@ func (l *LoginLogic) Login(in *user.LoginReq) (*user.LoginResp, error) {
 		}, nil
 	}
 
-	var (
-		id       int64
-		name     string
-		password string
-		status   int32
-		role     int32
-	)
-	err := l.svcCtx.DB.QueryRowContext(l.ctx,
-		"SELECT id, username, password, status, role FROM user WHERE username = ?", username,
-	).Scan(&id, &name, &password, &status, &role)
-
+	stored, err := l.svcCtx.UserModel.FindOneByUsername(l.ctx, username)
 	switch {
-	case errors.Is(err, sql.ErrNoRows):
+	case errors.Is(err, sqlx.ErrNotFound):
 		return &user.LoginResp{
 			Code: errcode.Unauthorized,
 			Msg:  errcode.Msg(errcode.Unauthorized),
@@ -61,13 +51,13 @@ func (l *LoginLogic) Login(in *user.LoginReq) (*user.LoginResp, error) {
 		return nil, err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(password), []byte(in.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(stored.Password), []byte(in.Password)); err != nil {
 		return &user.LoginResp{
 			Code: errcode.Unauthorized,
 			Msg:  errcode.Msg(errcode.Unauthorized),
 		}, nil
 	}
-	if status != 1 {
+	if stored.Status != 1 {
 		return &user.LoginResp{
 			Code: errcode.Forbidden,
 			Msg:  errcode.Msg(errcode.Forbidden),
@@ -78,14 +68,12 @@ func (l *LoginLogic) Login(in *user.LoginReq) (*user.LoginResp, error) {
 	if ttl <= 0 {
 		ttl = 24 * time.Hour
 	}
-	token, err := auth.SignWithRole(l.svcCtx.Config.Jwt.Secret, id, name, role, ttl)
+	token, err := auth.SignWithRole(l.svcCtx.Config.Jwt.Secret, stored.Id, stored.Username, int32(stored.Role), ttl)
 	if err != nil {
 		l.Errorf("sign token failed: %v", err)
 		return nil, err
 	}
-	if _, err := l.svcCtx.DB.ExecContext(l.ctx,
-		"UPDATE user SET last_login_at = NOW() WHERE id = ?", id,
-	); err != nil {
+	if err := l.svcCtx.UserModel.UpdateLastLogin(l.ctx, stored.Id); err != nil {
 		l.Errorf("update last login time failed: %v", err)
 	}
 
@@ -93,8 +81,8 @@ func (l *LoginLogic) Login(in *user.LoginReq) (*user.LoginResp, error) {
 		Code:     errcode.Success,
 		Msg:      errcode.Msg(errcode.Success),
 		Token:    token,
-		UserId:   id,
-		Username: name,
-		Role:     role,
+		UserId:   stored.Id,
+		Username: stored.Username,
+		Role:     int32(stored.Role),
 	}, nil
 }

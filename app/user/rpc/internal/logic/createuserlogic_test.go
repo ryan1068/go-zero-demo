@@ -15,6 +15,12 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
+const (
+	insertUserSQL  = "(?i)insert into .user."
+	findUserByIDSQL = "(?i)select .* from .user. where .id. = \\? limit 1"
+	insertAuditSQL  = "(?i)insert into .admin_audit_log."
+)
+
 func validCreateUserReq() *user.CreateUserReq {
 	return &user.CreateUserReq{
 		Username: "alice",
@@ -36,19 +42,17 @@ func TestCreateUserRpc_Success(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectExec("INSERT INTO user").
-		WithArgs("alice", sqlmock.AnyArg(), "Alice", "alice@example.com", "13900000000", "/avatars/alice.svg", int64(1), int64(0), "测试用户").
+	mock.ExpectExec(insertUserSQL).
+		WithArgs("alice", sqlmock.AnyArg(), "Alice", "alice@example.com", "13900000000", "/avatars/alice.svg", int64(1), "测试用户", int64(0), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(100, 1))
 
-	rows := sqlmock.NewRows([]string{
-		"id", "username", "nickname", "email", "phone", "avatar", "status", "remark", "created_at", "updated_at", "role",
-	}).AddRow(
-		int64(100), "alice", "Alice", "alice@example.com", "13900000000", "/avatars/alice.svg", int32(1), "测试用户",
-		int64(1704067200), int64(1704067201), int32(0),
-	)
-	mock.ExpectQuery("SELECT id, username, COALESCE").
+	rows := addUserRow(newUserRows(), 100, "alice", "", "Alice", "alice@example.com", "13900000000", "/avatars/alice.svg", 1, "测试用户", 0)
+	mock.ExpectQuery(findUserByIDSQL).
 		WithArgs(int64(100)).
 		WillReturnRows(rows)
+	mock.ExpectExec(insertAuditSQL).
+		WithArgs(int64(0), "create_user", "user", int64(100), "alice").
+		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	logic := NewCreateUserLogic(context.Background(), newUserServiceContext(t, db))
 	logic.Logger = logx.WithContext(context.Background())
@@ -78,7 +82,7 @@ func TestCreateUserRpc_DuplicateUsername(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectExec("INSERT INTO user").
+	mock.ExpectExec(insertUserSQL).
 		WillReturnError(&mysqlDriver.MySQLError{Number: mysqlDuplicateKey, Message: "Duplicate entry"})
 
 	logic := NewCreateUserLogic(context.Background(), newUserServiceContext(t, db))
@@ -140,7 +144,7 @@ func TestCreateUserRpc_InsertError(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectExec("INSERT INTO user").
+	mock.ExpectExec(insertUserSQL).
 		WillReturnError(errors.New("db down"))
 
 	logic := NewCreateUserLogic(context.Background(), newUserServiceContext(t, db))
@@ -158,9 +162,9 @@ func TestCreateUserRpc_FindError(t *testing.T) {
 	}
 	defer db.Close()
 
-	mock.ExpectExec("INSERT INTO user").
+	mock.ExpectExec(insertUserSQL).
 		WillReturnResult(sqlmock.NewResult(100, 1))
-	mock.ExpectQuery("SELECT id, username, COALESCE").
+	mock.ExpectQuery(findUserByIDSQL).
 		WithArgs(int64(100)).
 		WillReturnError(sql.ErrNoRows)
 

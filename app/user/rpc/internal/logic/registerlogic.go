@@ -25,7 +25,7 @@ func NewRegisterLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Register
 }
 
 func (l *RegisterLogic) Register(in *user.RegisterReq) (*user.RegisterResp, error) {
-	info, code, err := createUser(l.ctx, l.svcCtx.DB, createUserParams{
+	info, code, err := createUser(l.ctx, l.svcCtx, createUserParams{
 		Username: in.Username,
 		Password: in.Password,
 		Nickname: in.Nickname,
