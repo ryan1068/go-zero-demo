@@ -25,6 +25,10 @@ func ListSkusHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	}
 }
 
+func AdminListSkusHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return ListSkusHandler(svcCtx)
+}
+
 func SaveSkuHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.SaveSkuReq

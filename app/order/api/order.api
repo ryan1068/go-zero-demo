@@ -195,7 +195,6 @@ type PathIdReq {
 	Id int64 `path:"id"`
 }
 
-
 type AfterSaleInfo {
 	Id               int64    `json:"id"`
 	AfterSaleNo      string   `json:"after_sale_no"`
@@ -274,7 +273,7 @@ type ShipAfterSaleReq {
 
 service order {
 	@handler ListCartHandler
-	get /cart () returns (CartListResp)
+	get /cart returns (CartListResp)
 
 	@handler AddCartHandler
 	post /cart/items (AddCartReq) returns (CartItemResp)
@@ -322,7 +321,7 @@ service order {
 	post /admin/order/:id/cancel (CancelOrderReq) returns (OrderResp)
 
 	@handler DashboardHandler
-	get /admin/dashboard () returns (DashboardResp)
+	get /admin/dashboard returns (DashboardResp)
 
 	@handler ApplyAfterSaleHandler
 	post /after-sales (ApplyAfterSaleReq) returns (AfterSaleResp)
@@ -348,3 +347,4 @@ service order {
 	@handler AdminGetOrderTracksHandler
 	get /admin/order/:id/tracks (GetOrderReq) returns (OrderTracksResp)
 }
+

@@ -138,7 +138,6 @@ type UploadBatchResp {
 	Urls []string `json:"urls"`
 }
 
-
 type SkuInfo {
 	Id            int64  `json:"id"`
 	ProductId     int64  `json:"product_id"`
@@ -199,7 +198,7 @@ type HotWordsResp {
 
 service product-api {
 	@handler ListCategoriesHandler
-	get /categories () returns (ListCategoriesResp)
+	get /categories returns (ListCategoriesResp)
 
 	@handler ListProductsHandler
 	get /products (ListProductsReq) returns (ListProductsResp)
@@ -211,25 +210,25 @@ service product-api {
 	get /uploads/:name (UploadNameReq) returns (BaseResp)
 
 	@handler UploadBatchHandler
-	post /admin/uploads/batch () returns (UploadBatchResp)
+	post /admin/uploads/batch returns (UploadBatchResp)
 
 	@handler DeleteUploadHandler
 	delete /admin/uploads/:name (UploadNameReq) returns (BaseResp)
 
 	@handler AdminListCategoriesHandler
-	get /admin/categories () returns (ListCategoriesResp)
+	get /admin/categories returns (ListCategoriesResp)
 
 	@handler SaveCategoryHandler
 	post /admin/categories (SaveCategoryReq) returns (CategoryResp)
 
-	@handler SaveCategoryHandler
+	@handler UpdateCategoryHandler
 	put /admin/categories/:id (SaveCategoryReq) returns (CategoryResp)
 
 	@handler DeleteCategoryHandler
 	delete /admin/categories/:id (PathIdReq) returns (BaseResp)
 
 	@handler ProductStatsHandler
-	get /admin/products/stats () returns (ProductStatsResp)
+	get /admin/products/stats returns (ProductStatsResp)
 
 	@handler AdminListProductsHandler
 	get /admin/products (ListProductsReq) returns (ListProductsResp)
@@ -240,7 +239,7 @@ service product-api {
 	@handler SaveProductHandler
 	post /admin/products (SaveProductReq) returns (ProductResp)
 
-	@handler SaveProductHandler
+	@handler UpdateProductHandler
 	put /admin/products/:id (SaveProductReq) returns (ProductResp)
 
 	@handler DeleteProductHandler
@@ -256,9 +255,9 @@ service product-api {
 	get /products/suggest (SuggestReq) returns (SuggestResp)
 
 	@handler HotWordsHandler
-	get /products/hot () returns (HotWordsResp)
+	get /products/hot returns (HotWordsResp)
 
-	@handler ListSkusHandler
+	@handler AdminListSkusHandler
 	get /admin/products/:id/skus (PathIdReq) returns (SkuListResp)
 
 	@handler SaveSkuHandler
@@ -267,3 +266,4 @@ service product-api {
 	@handler DeleteSkuHandler
 	delete /admin/skus/:id (SkuIdReq) returns (BaseResp)
 }
+

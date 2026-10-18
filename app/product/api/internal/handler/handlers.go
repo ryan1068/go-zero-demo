@@ -81,6 +81,10 @@ func SaveCategoryHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	}
 }
 
+func UpdateCategoryHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return SaveCategoryHandler(svcCtx)
+}
+
 func DeleteCategoryHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.PathIdReq
@@ -159,6 +163,10 @@ func SaveProductHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 		httpx.OkJsonCtx(r.Context(), w, resp)
 	}
+}
+
+func UpdateProductHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return SaveProductHandler(svcCtx)
 }
 
 func DeleteProductHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {

@@ -156,7 +156,6 @@ type PathIdReq {
 	Id int64 `path:"id"`
 }
 
-
 type RegionInfo {
 	Id       int64  `json:"id"`
 	ParentId int64  `json:"parent_id"`
@@ -241,7 +240,7 @@ service user-api {
 	put /admin/users/:id/status (UpdateUserStatusReq) returns (BaseResp)
 
 	@handler ListAddressesHandler
-	get /addresses () returns (ListAddressesResp)
+	get /addresses returns (ListAddressesResp)
 
 	@handler CreateAddressHandler
 	post /addresses (SaveAddressReq) returns (AddressResp)
@@ -256,7 +255,7 @@ service user-api {
 	put /addresses/:id/default (PathIdReq) returns (BaseResp)
 
 	@handler LogoutHandler
-	post /user/logout () returns (LogoutResp)
+	post /user/logout returns (LogoutResp)
 
 	@handler ChangePasswordHandler
 	put /user/password (ChangePasswordReq) returns (BaseResp)
@@ -270,3 +269,4 @@ service user-api {
 	@handler ListAuditLogsHandler
 	get /admin/audit-logs (ListAuditLogsReq) returns (ListAuditLogsResp)
 }
+
