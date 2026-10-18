@@ -39,6 +39,7 @@ cd app/frontend && npm run dev
 
 ## 项目铁律（Superpowers code-review 会据此检查）
 
+- Go 代码一律按 go-zero 标准：优先使用 go-zero/goctl 提供的能力；go-zero 未提供时才自定义（详见 `app/CLAUDE.md`）
 - 所有 error 必须处理，不能 `_` 忽略
 - 不要在生成的 handler 中写业务逻辑，逻辑一律放 `internal/logic/`
 - 用户输入必须校验

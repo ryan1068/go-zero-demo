@@ -48,6 +48,7 @@ make db-backup   # 备份数据库（需要 MYSQL_ROOT_PASSWORD）
 
 ## 硬性规则
 
+- Go 代码一律按 go-zero 标准：优先使用 go-zero/goctl 提供的能力（model/sqlx、TransactCtx、middleware、Prometheus 等）；go-zero 未提供时才自定义，详见 `app/CLAUDE.md`
 - 不手改 `*_gen.go`、`routes.go`、`types.go`
 - 数据层只用 goctl model + `sqlx`，不直接使用 `database/sql`
 - 密码、密钥、token 不入仓库、不进日志
