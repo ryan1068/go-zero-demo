@@ -94,3 +94,4 @@ export function createOrder(data) {
 - 不要硬编码 API 地址
 - 不要在模板中写复杂逻辑
 - 所有用户输入必须校验
+- 搜索/筛选表单不要用原始 ID（用户 ID、操作人 ID、分类 ID），用名称、单号或状态
