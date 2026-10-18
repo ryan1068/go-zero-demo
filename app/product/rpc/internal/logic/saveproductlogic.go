@@ -2,7 +2,6 @@ package logic
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"strings"
 
@@ -80,8 +79,8 @@ func (l *SaveProductLogic) SaveProduct(req *product.SaveProductReq) (*product.Pr
 		Name:          name,
 		Subtitle:      subtitle,
 		CoverImage:    cover,
-		Images:        sql.NullString{String: images, Valid: true},
-		Detail:        sql.NullString{String: req.Detail, Valid: true},
+		Images:        model.NullString(images),
+		Detail:        model.NullString(req.Detail),
 		Price:         req.Price,
 		OriginalPrice: req.OriginalPrice,
 		Stock:         int64(req.Stock),
