@@ -5,6 +5,8 @@ CREATE DATABASE IF NOT EXISTS `looklook_order`
 
 USE `looklook_order`;
 
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- 购物车
 CREATE TABLE IF NOT EXISTS `cart_item` (
   `id`          bigint UNSIGNED NOT NULL AUTO_INCREMENT,

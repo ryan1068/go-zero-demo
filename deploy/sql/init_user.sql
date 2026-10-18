@@ -5,6 +5,8 @@ CREATE DATABASE IF NOT EXISTS `looklook_usercenter`
 
 USE `looklook_usercenter`;
 
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- 用户表
 CREATE TABLE IF NOT EXISTS `user` (
   `id`            bigint NOT NULL AUTO_INCREMENT,

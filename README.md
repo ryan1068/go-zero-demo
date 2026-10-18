@@ -62,7 +62,7 @@ docker compose up -d --build
 #    先把 docker-compose.yml 中 mysql 服务的 root 密码导出为环境变量
 export MYSQL_ROOT_PASSWORD='<docker-compose.yml 中 mysql 的 root 密码>'
 for f in deploy/sql/migrations/20261018_*.sql; do
-  docker exec -i mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD" < "$f"
+  docker exec -i mysql mysql -uroot --default-character-set=utf8mb4 -p"$MYSQL_ROOT_PASSWORD" < "$f"
 done
 ```
 
