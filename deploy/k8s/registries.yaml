@@ -1,0 +1,9 @@
+# k3s containerd 镜像代理：优先国内镜像站
+mirrors:
+  docker.io:
+    endpoint:
+      - "https://docker.1panel.live"
+      - "https://docker.m.daocloud.io"
+  ghcr.io:
+    endpoint:
+      - "https://ghcr.m.daocloud.io"

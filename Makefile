@@ -1,6 +1,6 @@
 .PHONY: build test lint fmt fmt-check check protogen clean \
 	run-gateway run-user-api run-user-rpc run-order-api run-order-rpc run-product-api run-product-rpc \
-	gen-model gen-check smoke db-backup \
+	gen-model gen-check smoke db-backup k8s-up k8s-down k8s-status \
 	gen-user-api gen-order-api gen-product-api gen-user-rpc gen-order-rpc \
 	frontend-dev frontend-build
 
@@ -107,6 +107,17 @@ frontend-dev:
 
 frontend-build:
 	cd app/frontend && npm run build
+
+k8s-up:
+	k3d cluster create --config deploy/k8s/k3d-cluster.yaml --registry-config deploy/k8s/registries.yaml
+	kubectl create namespace mall --dry-run=client -o yaml | kubectl apply -f -
+
+k8s-down:
+	k3d cluster delete mall
+
+k8s-status:
+	@k3d cluster list
+	@kubectl get nodes -o wide
 
 clean:
 	rm -rf app/*/api/internal/{handler,logic,types} app/*/rpc/pb app/*/rpc/*client

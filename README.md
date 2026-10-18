@@ -118,6 +118,32 @@ Go 服务的 Dockerfile 已把 Alpine 软件源切到清华 TUNA；如果 TUNA �
 管理员：admin / 123456
 ```
 
+## 本地 Kubernetes 环境
+
+用 k3d 启动 3 节点集群（1 个控制面 + 2 个工作节点），用于本地验证 k8s 部署；商城日常开发仍用 Docker Compose，两者端口不冲突。
+
+前置：Docker Desktop 已启动，安装 k3d：
+
+```bash
+brew install k3d
+```
+
+```bash
+make k8s-up      # 创建集群并建立 mall 命名空间
+make k8s-status  # 查看集群和节点
+make k8s-down    # 删除集群
+```
+
+- 集群名：`mall`，配置见 `deploy/k8s/k3d-cluster.yaml`
+- 镜像代理：`deploy/k8s/registries.yaml`，docker.io / ghcr.io 走国内镜像站
+- 默认禁用 Traefik，避免首次启动卡在 Ingress 镜像拉取；需要 Ingress 时再单独安装
+- 首次启动 CoreDNS、metrics-server 等系统镜像需要拉取，可能耗时 5–10 分钟
+- 负载均衡端口：`localhost:8090 → 80`、`localhost:8443 → 443`
+- 本项目的镜像可用 `k3d image import <image> -c mall` 导入；若报 digest 缺失，改用：
+  `docker save --platform linux/arm64 <image> -o /tmp/x.tar`，再对每个节点执行
+  `docker exec <node> ctr -n k8s.io images import /tmp/x.tar`
+- k3s 版本由 k3d 默认值决定，升级 k3d 后重建集群即可
+
 ## 主要流程
 
 ```text

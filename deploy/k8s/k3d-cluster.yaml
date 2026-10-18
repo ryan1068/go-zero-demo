@@ -1,0 +1,26 @@
+# 3 节点本地集群：1 个控制面 + 2 个工作节点
+# 使用：make k8s-up / make k8s-down / make k8s-status
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: mall
+servers: 1
+agents: 2
+ports:
+  # 避开商城和管理后台占用的 8080/8081
+  - port: 8090:80
+    nodeFilters:
+      - loadbalancer
+  - port: 8443:443
+    nodeFilters:
+      - loadbalancer
+options:
+  k3s:
+    extraArgs:
+      # 默认不装 Traefik：首次启动会卡在镜像拉取，需要时再单独安装 Ingress
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true
