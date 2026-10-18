@@ -3,9 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net/http"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/zrpc"
@@ -24,11 +22,7 @@ func main() {
 	flag.Parse()
 
 	var c config.Config
-	conf.MustLoad(*configFile, &c)
-	go func() {
-		http.Handle("/metrics", promhttp.Handler())
-		_ = http.ListenAndServe(":9105", nil)
-	}()
+	conf.MustLoad(*configFile, &c, conf.UseEnv())
 
 	ctx := svc.NewServiceContext(c)
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {

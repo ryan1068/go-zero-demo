@@ -10,3 +10,7 @@ Mysql:
 Jwt:
   Secret: ${JWT_SECRET}
   ExpireHours: 24
+Prometheus:
+  Host: 0.0.0.0
+  Port: 9100
+  Path: /metrics
