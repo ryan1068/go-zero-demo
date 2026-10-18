@@ -132,18 +132,6 @@ type UploadNameReq {
 	Name string `path:"name"`
 }
 
-type UploadResp {
-	Code int32  `json:"code"`
-	Msg  string `json:"msg"`
-	Url  string `json:"url"`
-}
-
-type UploadBatchResp {
-	Code int32    `json:"code"`
-	Msg  string   `json:"msg"`
-	Urls []string `json:"urls"`
-}
-
 type SkuInfo {
 	Id            int64  `json:"id"`
 	ProductId     int64  `json:"product_id"`
@@ -261,15 +249,6 @@ service product-api {
 
 	@handler SaveSkuHandler
 	post /admin/skus (SaveSkuReq) returns (SkuResp)
-
-	@handler UploadHandler
-	post /admin/upload returns (UploadResp)
-
-	@handler UploadBatchHandler
-	post /admin/uploads/batch returns (UploadBatchResp)
-
-	@handler DeleteUploadHandler
-	delete /admin/uploads/:name (UploadNameReq) returns (BaseResp)
 }
 
 @server (

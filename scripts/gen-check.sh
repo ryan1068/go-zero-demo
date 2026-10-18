@@ -26,7 +26,7 @@ check_app() {
       ;;
     app/product/api)
       # goctl cannot generate multipart upload or static file responses.
-      excludes=(-x uploadhandler.go -x uploadbatchhandler.go -x deleteuploadhandler.go -x serveuploadhandler.go)
+      excludes=(-x serveuploadhandler.go)
       ;;
   esac
 

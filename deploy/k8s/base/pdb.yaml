@@ -56,6 +56,17 @@ spec:
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
+  name: product-api
+  namespace: mall
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: product-api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
   name: gateway
   namespace: mall
 spec:

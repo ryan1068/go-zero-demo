@@ -111,21 +111,6 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 					Path:    "/admin/skus",
 					Handler: SaveSkuHandler(serverCtx),
 				},
-				{
-					Method:  http.MethodPost,
-					Path:    "/admin/upload",
-					Handler: UploadHandler(serverCtx),
-				},
-				{
-					Method:  http.MethodDelete,
-					Path:    "/admin/uploads/:name",
-					Handler: DeleteUploadHandler(serverCtx),
-				},
-				{
-					Method:  http.MethodPost,
-					Path:    "/admin/uploads/batch",
-					Handler: UploadBatchHandler(serverCtx),
-				},
 			}...,
 		),
 	)

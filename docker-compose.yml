@@ -384,7 +384,6 @@ services:
       - JWT_SECRET=${JWT_SECRET:?请先复制 .env.example 为 .env 并设置 JWT_SECRET}
     volumes:
       - ./app/product/api/etc:/app/etc
-      - ./data/uploads:/app/uploads
     networks:
       - looklook_net
     depends_on:

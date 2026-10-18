@@ -189,18 +189,6 @@ type UpdateProductStatusReq struct {
 	Status int32 `json:"status"`
 }
 
-type UploadBatchResp struct {
-	Code int32    `json:"code"`
-	Msg  string   `json:"msg"`
-	Urls []string `json:"urls"`
-}
-
 type UploadNameReq struct {
 	Name string `path:"name"`
-}
-
-type UploadResp struct {
-	Code int32  `json:"code"`
-	Msg  string `json:"msg"`
-	Url  string `json:"url"`
 }
