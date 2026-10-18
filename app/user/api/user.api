@@ -27,6 +27,7 @@ type UserResp {
 type LoginReq {
 	Username string `json:"username" validate:"required"`
 	Password string `json:"password" validate:"required"`
+	IP       string `json:"-"`
 }
 
 type LoginData {
@@ -227,17 +228,17 @@ service user-api {
 	@handler RegisterHandler
 	post /user/register (RegisterReq) returns (RegisterResp)
 
+	@handler ListRegionsHandler
+	get /user/regions (ListRegionsReq) returns (ListRegionsResp)
+
 	@handler UserHandler
 	get /user/:name (UserReq) returns (UserResp)
 
-	@handler CreateUserHandler
-	post /users (CreateUserReq) returns (CreateUserResp)
+	@handler LogoutHandler
+	post /user/logout returns (LogoutResp)
 
-	@handler ListUsersHandler
-	get /users (ListUsersReq) returns (ListUsersResp)
-
-	@handler UpdateUserStatusHandler
-	put /admin/users/:id/status (UpdateUserStatusReq) returns (BaseResp)
+	@handler ChangePasswordHandler
+	put /user/password (ChangePasswordReq) returns (BaseResp)
 
 	@handler ListAddressesHandler
 	get /addresses returns (ListAddressesResp)
@@ -253,20 +254,30 @@ service user-api {
 
 	@handler SetDefaultAddressHandler
 	put /addresses/:id/default (PathIdReq) returns (BaseResp)
+}
 
-	@handler LogoutHandler
-	post /user/logout returns (LogoutResp)
-
-	@handler ChangePasswordHandler
-	put /user/password (ChangePasswordReq) returns (BaseResp)
-
-	@handler ListRegionsHandler
-	get /user/regions (ListRegionsReq) returns (ListRegionsResp)
-
-	@handler UpdateUserRoleHandler
-	put /admin/users/:id/role (UpdateUserRoleReq) returns (BaseResp)
+@server (
+	middleware: AdminOnlyMiddleware
+)
+service user-api {
+	@handler ListUsersHandler
+	get /users (ListUsersReq) returns (ListUsersResp)
 
 	@handler ListAuditLogsHandler
 	get /admin/audit-logs (ListAuditLogsReq) returns (ListAuditLogsResp)
+}
+
+@server (
+	middleware: SuperAdminOnlyMiddleware
+)
+service user-api {
+	@handler CreateUserHandler
+	post /users (CreateUserReq) returns (CreateUserResp)
+
+	@handler UpdateUserStatusHandler
+	put /admin/users/:id/status (UpdateUserStatusReq) returns (BaseResp)
+
+	@handler UpdateUserRoleHandler
+	put /admin/users/:id/role (UpdateUserRoleReq) returns (BaseResp)
 }
 

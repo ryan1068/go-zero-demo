@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 
 	"go-zero-demo/pkg/auth"
@@ -30,11 +29,6 @@ func main() {
 	if err := auth.ValidateSecret(c.Jwt.Secret); err != nil {
 		logx.Must(err)
 	}
-	// 启动Prometheus metrics服务
-	go func() {
-		http.Handle("/metrics", promhttp.Handler())
-		http.ListenAndServe(":9101", nil) // 暴露metrics端口
-	}()
 
 	server := rest.MustNewServer(c.RestConf)
 	defer server.Stop()

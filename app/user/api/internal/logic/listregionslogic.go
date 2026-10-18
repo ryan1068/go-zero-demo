@@ -82,12 +82,12 @@ func NewListRegionsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *ListR
 	return &ListRegionsLogic{Logger: logx.WithContext(ctx), ctx: ctx, svcCtx: svcCtx}
 }
 
-func (l *ListRegionsLogic) ListRegions(req *types.ListRegionsReq) *types.ListRegionsResp {
+func (l *ListRegionsLogic) ListRegions(req *types.ListRegionsReq) (*types.ListRegionsResp, error) {
 	data := make([]types.RegionInfo, 0, len(regionData))
 	for _, region := range regionData {
 		if region.ParentId == req.ParentId {
 			data = append(data, region)
 		}
 	}
-	return &types.ListRegionsResp{Code: 200, Msg: "ok", Data: data}
+	return &types.ListRegionsResp{Code: 200, Msg: "ok", Data: data}, nil
 }

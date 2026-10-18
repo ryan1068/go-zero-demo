@@ -9,22 +9,6 @@ import (
 	"go-zero-demo/user-api/internal/types"
 )
 
-func UpdateUserRoleHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.UpdateUserRoleReq
-		if err := httpx.Parse(r, &req); err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
-			return
-		}
-		resp, err := logic.NewUpdateUserRoleLogic(r.Context(), svcCtx).UpdateUserRole(&req)
-		if err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
-		} else {
-			httpx.OkJsonCtx(r.Context(), w, resp)
-		}
-	}
-}
-
 func ListAuditLogsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.ListAuditLogsReq
@@ -32,7 +16,9 @@ func ListAuditLogsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
-		resp, err := logic.NewListAuditLogsLogic(r.Context(), svcCtx).ListAuditLogs(&req)
+
+		l := logic.NewListAuditLogsLogic(r.Context(), svcCtx)
+		resp, err := l.ListAuditLogs(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
