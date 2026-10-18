@@ -324,7 +324,7 @@ deploy/
 ## 开发规范
 
 - 流程：[docs/DEVELOPMENT_PROCESS.md](docs/DEVELOPMENT_PROCESS.md)
-- 执行清单：`.claude/skills/dev-process/SKILL.md`
+- 执行清单：`.claude/skills/workflow/SKILL.md`
 - 完成标准：[.github/pull_request_template.md](.github/pull_request_template.md)
 - 决策记录：[docs/adr/](docs/adr/)
 

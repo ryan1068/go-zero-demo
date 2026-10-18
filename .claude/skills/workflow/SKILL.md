@@ -1,5 +1,5 @@
 ---
-name: dev-process
+name: workflow
 description: 开始 L2/L3 开发任务、重构、跨模块改动或需求不明确的功能开发时使用；强制走 spec/计划、测试先行、小步实现、按级别 review、smoke。Use for non-trivial features or refactors in this repository.
 ---
 

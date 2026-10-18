@@ -1,6 +1,6 @@
 # 开发流程
 
-分级 → 澄清/计划 → 测试先行 → 小步实现 → review + 验收 + 收尾。执行清单见 `.claude/skills/dev-process/SKILL.md`；决策记录见 `docs/adr/`。
+分级 → 澄清/计划 → 测试先行 → 小步实现 → review + 验收 + 收尾。执行清单见 `.claude/skills/workflow/SKILL.md`；决策记录见 `docs/adr/`。
 
 ## 分级
 

@@ -1,7 +1,7 @@
 # go-zero-demo
 
 go-zero 微服务商城：user（用户）、product（商品）、order（订单）、gateway（网关），前端 Vue3 + Element Plus。
-开发流程见 `docs/DEVELOPMENT_PROCESS.md`，执行清单见 `.claude/skills/dev-process/SKILL.md`。本文件只写技术约束。
+开发流程见 `docs/DEVELOPMENT_PROCESS.md`，执行清单见 `.claude/skills/workflow/SKILL.md`。本文件只写技术约束。
 
 ## 开发流程（摘要）
 
