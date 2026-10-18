@@ -10,18 +10,18 @@ scrape_configs:
   - job_name: 'user-api'
     static_configs:
       - targets: ['user-api:9101']
-        labels:
   - job_name: 'order-rpc'
     static_configs:
       - targets: ['order-rpc:9102']
   - job_name: 'order-api'
     static_configs:
       - targets: ['order-api:9103']
-        labels:
   - job_name: 'product-rpc'
     static_configs:
-      - targets: ['product-rpc:9104']
+      - targets: ['product-rpc:9105']
   - job_name: 'product-api'
     static_configs:
-      - targets: ['product-api:9105']
-        labels:
+      - targets: ['product-api:9104']
+  - job_name: 'media-api'
+    static_configs:
+      - targets: ['media-api:9106']
