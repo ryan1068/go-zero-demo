@@ -80,6 +80,9 @@ docker pull docker.1panel.live/library/node:20-alpine
 docker tag docker.1panel.live/library/node:20-alpine node:20-alpine
 docker pull docker.1panel.live/library/nginx:alpine
 docker tag docker.1panel.live/library/nginx:alpine nginx:alpine
+# MySQL 用 daocloud 镜像（1panel 的 MySQL 层较慢）
+docker pull docker.m.daocloud.io/library/mysql:8.0.36
+docker tag docker.m.daocloud.io/library/mysql:8.0.36 mysql:8.0.36
 ```
 
 也可以在 Docker Desktop 的 Docker Engine 配置里加 `registry-mirrors`，例如 `https://docker.1panel.live`、`https://docker.m.daocloud.io`，然后重启 Docker Desktop。

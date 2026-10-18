@@ -182,13 +182,15 @@ services:
       - redis
 
   mysql:
-    image: mysql/mysql-server:8.0.28
+    image: mysql:8.0.36
     container_name: mysql
     environment:
       # 时区上海 - Time zone Shanghai (Change if needed)
       TZ: Asia/Shanghai
       # root 密码 - root password
       MYSQL_ROOT_PASSWORD: PXDN93VRKUm8TeE7
+      # 允许容器外/其他容器以 root 连接（仅首次初始化时生效）
+      MYSQL_ROOT_HOST: "%"
     ports:
       - 33069:3306
     volumes:
@@ -207,6 +209,12 @@ services:
       --collation-server=utf8mb4_general_ci
       --explicit_defaults_for_timestamp=true
       --lower_case_table_names=1
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     privileged: true
     restart: always
     networks:
