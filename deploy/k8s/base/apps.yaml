@@ -17,7 +17,12 @@ metadata:
   name: user-rpc
   namespace: mall
 spec:
-  replicas: 1
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: user-rpc
@@ -26,6 +31,13 @@ spec:
       labels:
         app: user-rpc
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: user-rpc
       containers:
         - name: user-rpc
           image: user-rpc:local
@@ -89,7 +101,12 @@ metadata:
   name: user-api
   namespace: mall
 spec:
-  replicas: 1
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: user-api
@@ -98,6 +115,13 @@ spec:
       labels:
         app: user-api
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: user-api
       containers:
         - name: user-api
           image: user-api:local
@@ -163,7 +187,12 @@ metadata:
   name: order-rpc
   namespace: mall
 spec:
-  replicas: 1
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: order-rpc
@@ -172,6 +201,13 @@ spec:
       labels:
         app: order-rpc
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: order-rpc
       containers:
         - name: order-rpc
           image: order-rpc:local
@@ -235,7 +271,12 @@ metadata:
   name: order-api
   namespace: mall
 spec:
-  replicas: 1
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: order-api
@@ -244,6 +285,13 @@ spec:
       labels:
         app: order-api
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: order-api
       containers:
         - name: order-api
           image: order-api:local
@@ -304,7 +352,12 @@ metadata:
   name: product-rpc
   namespace: mall
 spec:
-  replicas: 1
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: product-rpc
@@ -313,6 +366,13 @@ spec:
       labels:
         app: product-rpc
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: product-rpc
       containers:
         - name: product-rpc
           image: product-rpc:local
@@ -448,7 +508,12 @@ metadata:
   name: gateway
   namespace: mall
 spec:
-  replicas: 1
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: gateway
@@ -457,6 +522,13 @@ spec:
       labels:
         app: gateway
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: gateway
       containers:
         - name: gateway
           image: gateway:local

@@ -1,0 +1,76 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: user-rpc
+  namespace: mall
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: user-rpc
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: user-api
+  namespace: mall
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: user-api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: order-rpc
+  namespace: mall
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: order-rpc
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: order-api
+  namespace: mall
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: order-api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: product-rpc
+  namespace: mall
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: product-rpc
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gateway
+  namespace: mall
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: gateway
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: frontend
+  namespace: mall
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: frontend

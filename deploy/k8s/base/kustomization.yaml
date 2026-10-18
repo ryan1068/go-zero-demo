@@ -5,3 +5,4 @@ resources:
   - infra.yaml
   - apps.yaml
   - frontend.yaml
+  - pdb.yaml
