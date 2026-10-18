@@ -47,6 +47,8 @@
 | `looklook_product` | `category`、`product`、`product_sku` |
 | `looklook_order` | `cart_item`、`orders`、`order_item`、`payment_record`、`order_log`、`after_sale`、`refund_record` |
 
+字符集统一为 `utf8mb4`，排序规则统一为 `utf8mb4_unicode_ci`。MySQL 8 建表时必须显式写 `COLLATE=utf8mb4_unicode_ci`，只写 `DEFAULT CHARSET=utf8mb4` 会使用字符集自身的默认排序规则 `utf8mb4_0900_ai_ci`，导致库与表不一致。
+
 ## 快速开始
 
 ```bash

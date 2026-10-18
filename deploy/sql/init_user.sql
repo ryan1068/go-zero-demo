@@ -1,7 +1,7 @@
 -- 创建用户数据库
 CREATE DATABASE IF NOT EXISTS `looklook_usercenter`
   DEFAULT CHARACTER SET utf8mb4
-  COLLATE utf8mb4_general_ci;
+  COLLATE utf8mb4_unicode_ci;
 
 USE `looklook_usercenter`;
 
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS `user` (
   KEY `idx_phone` (`phone`),
   KEY `idx_nickname` (`nickname`),
   KEY `idx_status_id` (`status`, `id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
 -- 收货地址表
 CREATE TABLE IF NOT EXISTS `user_address` (
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS `user_address` (
   PRIMARY KEY (`id`),
   KEY `idx_user_default` (`user_id`, `is_default`, `id`),
   KEY `idx_user_created` (`user_id`, `created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='收货地址表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='收货地址表';
 
 -- 测试账号：admin / 123456，管理员
 INSERT INTO `user` (`username`, `password`, `nickname`, `email`, `phone`, `status`, `role`, `remark`) VALUES
@@ -65,4 +65,4 @@ CREATE TABLE IF NOT EXISTS `admin_audit_log` (
   PRIMARY KEY (`id`),
   KEY `idx_admin_created` (`admin_id`, `created_at`),
   KEY `idx_target` (`target_type`, `target_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='管理端操作审计';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理端操作审计';

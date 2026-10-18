@@ -12,13 +12,14 @@ CREATE TABLE `user` (
     `deleted_at` DATETIME DEFAULT NULL COMMENT '软删除',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_username` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 ```
 
 - 主键：`id BIGINT UNSIGNED AUTO_INCREMENT`
 - 时间：`created_at` + `updated_at` 必须
 - 软删除：`deleted_at DATETIME DEFAULT NULL`
-- 引擎：InnoDB，字符集：utf8mb4
+- 引擎：InnoDB，字符集：utf8mb4，排序规则：utf8mb4_unicode_ci
+- 建表必须显式写 `COLLATE=utf8mb4_unicode_ci`；MySQL 8 只写 `DEFAULT CHARSET=utf8mb4` 会落到 `utf8mb4_0900_ai_ci`，与库默认值不一致
 - 字段必须有 COMMENT
 
 ## 索引规范

@@ -1,7 +1,7 @@
 -- 创建订单数据库
 CREATE DATABASE IF NOT EXISTS `looklook_order`
   DEFAULT CHARACTER SET utf8mb4
-  COLLATE utf8mb4_general_ci;
+  COLLATE utf8mb4_unicode_ci;
 
 USE `looklook_order`;
 
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS `cart_item` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_product` (`user_id`, `product_id`),
   KEY `idx_user_selected` (`user_id`, `selected`, `updated_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='购物车表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='购物车表';
 
 -- 订单头
 CREATE TABLE IF NOT EXISTS `orders` (
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
   KEY `idx_status_created` (`status`, `created_at`),
   KEY `idx_status_shipped` (`status`, `shipped_at`),
   KEY `idx_created` (`created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单头表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='订单头表';
 
 -- 订单明细
 CREATE TABLE IF NOT EXISTS `order_item` (
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS `order_item` (
   PRIMARY KEY (`id`),
   KEY `idx_order` (`order_id`),
   KEY `idx_product` (`product_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单明细表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='订单明细表';
 
 -- 支付记录
 CREATE TABLE IF NOT EXISTS `payment_record` (
@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS `payment_record` (
   UNIQUE KEY `uk_payment_no` (`payment_no`),
   KEY `idx_order` (`order_id`),
   KEY `idx_user_created` (`user_id`, `created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付记录表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='支付记录表';
 
 -- 订单状态日志
 CREATE TABLE IF NOT EXISTS `order_log` (
@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS `order_log` (
   `created_at`     datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_order_created` (`order_id`, `created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单状态日志表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='订单状态日志表';
 
 -- 售后申请
 CREATE TABLE IF NOT EXISTS `after_sale` (
@@ -136,7 +136,7 @@ CREATE TABLE IF NOT EXISTS `after_sale` (
   KEY `idx_user_status_created` (`user_id`, `status`, `created_at`),
   KEY `idx_order` (`order_id`),
   KEY `idx_status_created` (`status`, `created_at`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='售后申请表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='售后申请表';
 
 -- 退款记录
 CREATE TABLE IF NOT EXISTS `refund_record` (
@@ -154,4 +154,4 @@ CREATE TABLE IF NOT EXISTS `refund_record` (
   UNIQUE KEY `uk_refund_no` (`refund_no`),
   KEY `idx_after_sale` (`after_sale_id`),
   KEY `idx_order` (`order_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='退款记录表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='退款记录表';

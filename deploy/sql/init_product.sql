@@ -1,11 +1,11 @@
 -- 创建商品数据库
 CREATE DATABASE IF NOT EXISTS `looklook_product`
   DEFAULT CHARACTER SET utf8mb4
-  COLLATE utf8mb4_general_ci;
+  COLLATE utf8mb4_unicode_ci;
 
 USE `looklook_product`;
 
-SET NAMES utf8mb4;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- 商品分类
 CREATE TABLE IF NOT EXISTS `category` (
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS `category` (
   PRIMARY KEY (`id`),
   KEY `idx_parent_status_sort` (`parent_id`, `status`, `sort`),
   KEY `idx_status_sort` (`status`, `sort`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品分类表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商品分类表';
 
 -- 商品
 CREATE TABLE IF NOT EXISTS `product` (
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `product` (
   KEY `idx_status_sort` (`status`, `sort`, `id`),
   KEY `idx_name` (`name`),
   FULLTEXT KEY `ft_product_search` (`name`, `subtitle`, `detail`) WITH PARSER ngram
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商品表';
 
 -- 演示分类
 INSERT INTO `category` (`parent_id`, `name`, `icon`, `sort`, `status`) VALUES
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS `product_sku` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_sku_code` (`sku_code`),
   KEY `idx_product_status` (`product_id`, `status`, `id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品 SKU 表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商品 SKU 表';
 
 -- 二级分类
 INSERT INTO `category` (`id`, `parent_id`, `name`, `icon`, `sort`, `status`) VALUES
