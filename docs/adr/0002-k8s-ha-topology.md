@@ -45,3 +45,7 @@
 - 软拓扑（`ScheduleAnyway`）：允许故障后 2+1 分布，但初始分布不保证每节点 1 个
 - 全部服务 3 副本：需要 RWX 共享存储或对象存储，并修改 product 服务上传逻辑
 - MySQL 主从 / Redis Sentinel / etcd 集群：改动和运维成本高，另立 spec
+
+## 更新
+
+2026-10-19：媒体职责迁出 product-api 后，product-api 已恢复 3 副本；media-api 因本机磁盘为单副本。见 ADR 0003。

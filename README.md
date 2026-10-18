@@ -1,6 +1,6 @@
 # 拾光严选 · go-zero-demo
 
-拾光严选是基于 go-zero 的商城示例，包含用户、商品、订单三个领域服务，以及网关和 Vue 3 前端。品牌 Slogan：把好物收进时光里。
+拾光严选是基于 go-zero 的商城示例，包含用户、商品、订单、媒体四个领域服务，以及网关和 Vue 3 前端。品牌 Slogan：把好物收进时光里。
 
 ## 架构
 
@@ -33,8 +33,9 @@
 | user-rpc | 9000 | 用户 gRPC |
 | order-api | 8001 | 购物车、订单、支付、发货 |
 | order-rpc | 9001 | 订单 gRPC |
-| product-api | 8002 | 分类、商品、图片上传 |
+| product-api | 8002 | 分类、商品 |
 | product-rpc | 9002 | 商品 gRPC |
+| media-api | 8003 | 媒体上传、读取、删除 |
 | frontend | 8080 / 8081 | 8080=管理后台，8081=商城 |
 | mysql | 33069 | MySQL 8.0 |
 | etcd | 2379 | 服务注册发现 |
@@ -46,6 +47,7 @@
 | `looklook_usercenter` | `user`、`user_address`、`admin_audit_log` |
 | `looklook_product` | `category`、`product`、`product_sku` |
 | `looklook_order` | `cart_item`、`orders`、`order_item`、`payment_record`、`order_log`、`after_sale`、`refund_record` |
+| `looklook_media` | `media_file` |
 
 字符集统一为 `utf8mb4`，排序规则统一为 `utf8mb4_unicode_ci`。MySQL 8 建表时必须显式写 `COLLATE=utf8mb4_unicode_ci`，只写 `DEFAULT CHARSET=utf8mb4` 会使用字符集自身的默认排序规则 `utf8mb4_0900_ai_ci`，导致库与表不一致。
 
@@ -75,7 +77,7 @@ docker compose up -d --build
 # 3. 已有 MySQL 数据卷时，依次执行迁移（只需执行一次）
 #    密码从 .env 读取；已有数据卷必须保持原来的 root 密码
 export MYSQL_ROOT_PASSWORD="$(grep '^MYSQL_ROOT_PASSWORD=' .env | cut -d= -f2-)"
-for f in deploy/sql/migrations/20261018_*.sql; do
+for f in deploy/sql/migrations/2026101*.sql; do
   docker exec -i mysql mysql -uroot --default-character-set=utf8mb4 -p"$MYSQL_ROOT_PASSWORD" < "$f"
 done
 ```
@@ -163,9 +165,9 @@ make k8s-backup                                         # 导出 k8s 中的数�
 
 - gateway、frontend、user/order/product 的 api 和 rpc：**3 副本**，硬拓扑分散为每节点 1 个
 - 滚动更新 `maxSurge: 0` / `maxUnavailable: 1`，PodDisruptionBudget `minAvailable: 2`
-- product-api：**1 副本**（uploads 是 local-path RWO 卷）
+- media-api：**1 副本**（本机磁盘 + local-path RWO 卷）
 - MySQL / Redis / etcd：**1 副本**，仍是单点
-- 决策记录见 `docs/adr/0002-k8s-ha-topology.md`
+- 决策记录：`docs/adr/0002-k8s-ha-topology.md`、`docs/adr/0003-media-service.md`
 
 ### 环境切换
 
@@ -277,6 +279,35 @@ curl -s localhost:8001/admin/dashboard \
   -H "Authorization: Bearer $ADMIN_TOKEN"
 ```
 
+## 媒体服务
+
+上传/读取已从 product-api 解耦到独立的 `media-api`（8003）。
+
+```bash
+# 上传（需要登录）
+curl -X POST localhost:8081/api/media/upload \
+  -H "Authorization: Bearer $TOKEN" \
+  -F file=@cover.png
+
+# 批量上传
+curl -X POST localhost:8081/api/media/uploads/batch \
+  -H "Authorization: Bearer $TOKEN" \
+  -F files=@a.png -F files=@b.png
+
+# 读取（公开）
+curl -o /dev/null -w '%{http_code}\n' \
+  localhost:8081/api/media/files/<name>
+
+# 删除（上传者或管理员）
+curl -X DELETE localhost:8081/api/media/admin/files/<name> \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+- 存储：Compose 用 `./data/uploads`；k8s 用 `media-files` PVC
+- 元数据：`looklook_media.media_file`
+- 旧 URL `/api/product/uploads/<name>` 仍可用，由 product-api 反代到 media-api
+- 本机磁盘限制下 media-api 为单副本；切到对象存储后可扩到 3 副本
+
 ## 前端页面
 
 **商城 C 端**
@@ -312,6 +343,7 @@ app/
 ├── user/             # 用户 api + rpc + model
 ├── order/            # 订单 api + rpc + model
 ├── product/          # 商品 api + rpc + model
+├── media/            # 媒体上传/读取 api
 └── frontend/         # Vue3 商城 + 管理后台
 pkg/
 ├── auth/             # JWT、身份上下文

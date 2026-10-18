@@ -1,6 +1,6 @@
 # 媒体服务独立 Implementation Plan
 
-> 状态：待批准。规格见 `docs/superpowers/specs/2026-10-19-media-service.md`。
+> 状态：已实现。规格见 `docs/superpowers/specs/2026-10-19-media-service.md`。
 
 **Goal:** 新增 `app/media/api`，把上传/读取/删除从 product-api 解耦；本机磁盘存储，旧 URL 兼容。
 
@@ -26,12 +26,12 @@
 - Test: `app/media/api/internal/logic/uploadlogic_test.go`, `deletelogic_test.go`
 
 **Steps:**
-- [ ] 写失败测试：类型/大小校验、保存成功、元数据写入、删除归属、越权删除
-- [ ] 运行测试确认失败
-- [ ] 建 go.mod（依赖 go-zero、pkg/auth、pkg/errcode + replace）
-- [ ] 定义 `media.api`：upload / batch / delete / get file
-- [ ] 生成 handler/types（goctl 或按现有服务手工对齐），multipart 与文件流 handler 保持手写并从 gen-check 排除
-- [ ] 配置 `looklook_media` DSN、`Upload.Dir`、`Upload.MaxSizeMB`、`Jwt.Secret`
+- [x] 写失败测试：类型/大小校验、保存成功、元数据写入、删除归属、越权删除
+- [x] 运行测试确认失败
+- [x] 建 go.mod（依赖 go-zero、pkg/auth、pkg/errcode + replace）
+- [x] 定义 `media.api`：upload / batch / delete / get file
+- [x] 生成 handler/types（goctl 或按现有服务手工对齐），multipart 与文件流 handler 保持手写并从 gen-check 排除
+- [x] 配置 `looklook_media` DSN、`Upload.Dir`、`Upload.MaxSizeMB`、`Jwt.Secret`
 
 ---
 
@@ -43,12 +43,12 @@
 - Create: `deploy/sql/init_media.sql`, `deploy/sql/migrations/20261019_media.sql`
 
 **Steps:**
-- [ ] `Storage` 接口 + `LocalStorage`：Save/Open/Delete
-- [ ] 上传校验（扩展名、Content-Type、大小、空文件）并清理半成品
-- [ ] 写 `media_file` 元数据（uploader_id 从 token 取）
-- [ ] 删除：校验上传者/管理员，软删除 + 物理删除
-- [ ] 读取：`filepath.Base` 防穿越，设置 Cache-Control
-- [ ] 测试通过；`go build ./...`
+- [x] `Storage` 接口 + `LocalStorage`：Save/Open/Delete
+- [x] 上传校验（扩展名、Content-Type、大小、空文件）并清理半成品
+- [x] 写 `media_file` 元数据（uploader_id 从 token 取）
+- [x] 删除：校验上传者/管理员，软删除 + 物理删除
+- [x] 读取：`filepath.Base` 防穿越，设置 Cache-Control
+- [x] 测试通过；`go build ./...`
 
 ---
 
@@ -62,11 +62,11 @@
 - Modify: `app/frontend/nginx.conf`, `deploy/k8s/frontend-nginx.conf`
 
 **Steps:**
-- [ ] product-api 保留 `GET /uploads/:name`，改为反代 `Media.Url/files/:name`
-- [ ] 删除 product-api 上传/批量/删除接口及前端调用
-- [ ] 前端新增 media 上传 API 并替换 ProductEdit
-- [ ] nginx 增加 `/api/media/` 代理（Compose 与 k8s 两份配置）
-- [ ] 更新 gen-check 排除项；`make gen-check` 通过
+- [x] product-api 保留 `GET /uploads/:name`，改为反代 `Media.Url/files/:name`
+- [x] 删除 product-api 上传/批量/删除接口及前端调用
+- [x] 前端新增 media 上传 API 并替换 ProductEdit
+- [x] nginx 增加 `/api/media/` 代理（Compose 与 k8s 两份配置）
+- [x] 更新 gen-check 排除项；`make gen-check` 通过
 
 ---
 
@@ -78,23 +78,23 @@
 - Create: `deploy/k8s/base/media-files` PVC（放在 apps.yaml）
 
 **Steps:**
-- [ ] Compose 增加 media 服务，复用 `./data/uploads`；product-api 移除上传卷
-- [ ] k8s 增加 media Deployment/Service（1 副本、Recreate、`media-files` PVC）
-- [ ] product-api 移除 uploads 卷，配置 `Media.Url: http://media:8003`
-- [ ] media 配置加入 ConfigMap 脚本；镜像加入 `k8s-images.sh`
-- [ ] 应用数据库迁移；复制现有上传文件到 media 卷
-- [ ] 部署并等待 Ready
+- [x] Compose 增加 media 服务，复用 `./data/uploads`；product-api 移除上传卷
+- [x] k8s 增加 media Deployment/Service（1 副本、Recreate、`media-files` PVC）
+- [x] product-api 移除 uploads 卷，配置 `Media.Url: http://media:8003`
+- [x] media 配置加入 ConfigMap 脚本；镜像加入 `k8s-images.sh`
+- [x] 应用数据库迁移；复制现有上传文件到 media 卷
+- [x] 部署并等待 Ready
 
 ---
 
 ### Task 5: 验收、文档与回滚
 
 **Steps:**
-- [ ] 集成验证：上传、新 URL、旧 URL、删除、越权、未登录
-- [ ] 前端商品编辑上传流程手工验证
-- [ ] `make check`、`make gen-check`、`make smoke`
-- [ ] 清理测试文件；计数核对
-- [ ] ADR 0003 + README 更新；独立 review；提交
+- [x] 集成验证：上传、新 URL、旧 URL、删除、越权、未登录
+- [x] 前端商品编辑上传流程手工验证
+- [x] `make check`、`make gen-check`、`make smoke`
+- [x] 清理测试文件；计数核对
+- [x] ADR 0003 + README 更新；独立 review；提交
 
 ---
 
