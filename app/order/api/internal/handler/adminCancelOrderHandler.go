@@ -9,23 +9,16 @@ import (
 	"go-zero-demo/order-api/internal/types"
 )
 
-func GetOrderTracksHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
-	return getTracks(svcCtx, false)
-}
-
-func AdminGetOrderTracksHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
-	return getTracks(svcCtx, true)
-}
-
-func getTracks(svcCtx *svc.ServiceContext, admin bool) http.HandlerFunc {
+func AdminCancelOrderHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.GetOrderReq
+		var req types.CancelOrderReq
 		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 
-		resp, err := logic.NewGetOrderTracksLogic(r.Context(), svcCtx).GetOrderTracks(req.Id, admin)
+		l := logic.NewAdminCancelOrderLogic(r.Context(), svcCtx)
+		resp, err := l.AdminCancelOrder(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

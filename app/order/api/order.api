@@ -271,7 +271,7 @@ type ShipAfterSaleReq {
 	TrackingNo string `json:"tracking_no" validate:"required"`
 }
 
-service order {
+service order-api {
 	@handler ListCartHandler
 	get /cart returns (CartListResp)
 
@@ -308,21 +308,6 @@ service order {
 	@handler ConfirmOrderHandler
 	post /order/:id/confirm (ConfirmOrderReq) returns (OrderResp)
 
-	@handler AdminListOrdersHandler
-	get /admin/orders (ListOrdersReq) returns (OrderListResp)
-
-	@handler AdminGetOrderHandler
-	get /admin/order/:id (GetOrderReq) returns (OrderResp)
-
-	@handler ShipOrderHandler
-	post /admin/order/:id/ship (ShipOrderReq) returns (OrderResp)
-
-	@handler AdminCancelOrderHandler
-	post /admin/order/:id/cancel (CancelOrderReq) returns (OrderResp)
-
-	@handler DashboardHandler
-	get /admin/dashboard returns (DashboardResp)
-
 	@handler ApplyAfterSaleHandler
 	post /after-sales (ApplyAfterSaleReq) returns (AfterSaleResp)
 
@@ -334,6 +319,23 @@ service order {
 
 	@handler ShipAfterSaleHandler
 	post /after-sales/:id/ship (ShipAfterSaleReq) returns (AfterSaleResp)
+}
+
+@server (
+	middleware: AdminOnlyMiddleware
+)
+service order-api {
+	@handler AdminListOrdersHandler
+	get /admin/orders (ListOrdersReq) returns (OrderListResp)
+
+	@handler AdminGetOrderHandler
+	get /admin/order/:id (GetOrderReq) returns (OrderResp)
+
+	@handler ShipOrderHandler
+	post /admin/order/:id/ship (ShipOrderReq) returns (OrderResp)
+
+	@handler DashboardHandler
+	get /admin/dashboard returns (DashboardResp)
 
 	@handler AdminListAfterSalesHandler
 	get /admin/after-sales (ListAfterSalesReq) returns (AfterSaleListResp)
@@ -346,5 +348,13 @@ service order {
 
 	@handler AdminGetOrderTracksHandler
 	get /admin/order/:id/tracks (GetOrderReq) returns (OrderTracksResp)
+}
+
+@server (
+	middleware: SuperAdminOnlyMiddleware
+)
+service order-api {
+	@handler AdminCancelOrderHandler
+	post /admin/order/:id/cancel (CancelOrderReq) returns (OrderResp)
 }
 

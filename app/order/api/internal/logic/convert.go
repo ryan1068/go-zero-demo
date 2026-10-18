@@ -80,3 +80,31 @@ func toOrderInfo(info *order.OrderInfo) types.OrderInfo {
 	}
 	return result
 }
+
+func toAfterSaleInfo(info *order.AfterSaleInfo) types.AfterSaleInfo {
+	return types.AfterSaleInfo{
+		Id:               info.Id,
+		AfterSaleNo:      info.AfterSaleNo,
+		OrderId:          info.OrderId,
+		OrderItemId:      info.OrderItemId,
+		UserId:           info.UserId,
+		Type:             info.Type,
+		Reason:           info.Reason,
+		Description:      info.Description,
+		Images:           info.Images,
+		Amount:           info.Amount,
+		Status:           info.Status,
+		AdminRemark:      info.AdminRemark,
+		TrackingNo:       info.TrackingNo,
+		ApplyAt:          info.ApplyAt,
+		ReviewAt:         info.ReviewAt,
+		BuyerShippedAt:   info.BuyerShippedAt,
+		SellerReceivedAt: info.SellerReceivedAt,
+		RefundedAt:       info.RefundedAt,
+		CreatedAt:        info.CreatedAt,
+		UpdatedAt:        info.UpdatedAt,
+		OrderNo:          info.OrderNo,
+		ProductName:      info.ProductName,
+		ProductCover:     info.ProductCover,
+	}
+}

@@ -22,9 +22,13 @@ func NewGetOrderTracksLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Ge
 	return &GetOrderTracksLogic{Logger: logx.WithContext(ctx), ctx: ctx, svcCtx: svcCtx}
 }
 
-// GetOrderTracks returns a timeline derived from the order timestamps. It is a
+func (l *GetOrderTracksLogic) GetOrderTracks(req *types.GetOrderReq) (*types.OrderTracksResp, error) {
+	return l.tracks(req.Id, false)
+}
+
+// tracks returns a timeline derived from the order timestamps. It is a
 // demo-friendly logistics view until a real carrier API is integrated.
-func (l *GetOrderTracksLogic) GetOrderTracks(id int64, admin bool) (*types.OrderTracksResp, error) {
+func (l *GetOrderTracksLogic) tracks(id int64, admin bool) (*types.OrderTracksResp, error) {
 	ctx, ok := injectUser(l.ctx)
 	if !ok {
 		return &types.OrderTracksResp{Code: 401, Msg: "未授权"}, nil
