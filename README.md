@@ -120,7 +120,7 @@ Go 服务的 Dockerfile 已把 Alpine 软件源切到清华 TUNA；如果 TUNA �
 
 ## 本地 Kubernetes 环境
 
-用 k3d 启动 3 节点集群（1 个控制面 + 2 个工作节点），用于本地验证 k8s 部署；商城日常开发仍用 Docker Compose，两者端口不冲突。
+用 k3d 启动 3 节点集群（1 个控制面 + 2 个工作节点），用于本地验证 k8s 部署；商城日常开发仍用 Docker Compose。两者使用相同的 host 端口，切换前必须先停止 Compose。
 
 前置：Docker Desktop 已启动，安装 k3d：
 
@@ -138,11 +138,47 @@ make k8s-down    # 删除集群
 - 镜像代理：`deploy/k8s/registries.yaml`，docker.io / ghcr.io 走国内镜像站
 - 默认禁用 Traefik，避免首次启动卡在 Ingress 镜像拉取；需要 Ingress 时再单独安装
 - 首次启动 CoreDNS、metrics-server 等系统镜像需要拉取，可能耗时 5–10 分钟
-- 负载均衡端口：`localhost:8090 → 80`、`localhost:8443 → 443`
-- 本项目的镜像可用 `k3d image import <image> -c mall` 导入；若报 digest 缺失，改用：
-  `docker save --platform linux/arm64 <image> -o /tmp/x.tar`，再对每个节点执行
-  `docker exec <node> ctr -n k8s.io images import /tmp/x.tar`
+- host 端口：8080/8081（前端）、8000–8002（API）、8888（网关）；8090/8443 预留给后续 Ingress
 - k3s 版本由 k3d 默认值决定，升级 k3d 后重建集群即可
+
+### 部署应用到 k8s
+
+```bash
+make k8s-images            # 构建 8 个镜像并导入 3 个节点
+make k8s-deploy            # 空库部署，MySQL 首次启动自动执行 init_*.sql
+make k8s-deploy RESTORE=1  # 迁移 Compose 现有数据（目标库已有业务数据时需 FORCE=1）
+```
+
+也可以分开执行：
+
+```bash
+make k8s-deploy
+make k8s-restore-db DB_BACKUP=backups/mysql-xxxx.sql   # 覆盖已有数据时加 FORCE=1
+make k8s-backup                                         # 导出 k8s 中的数据
+```
+
+`k8s-deploy` 会重启所有 Deployment/MySQL，确保新镜像、ConfigMap 和 Secret 生效。
+
+切换前先停止 Compose 释放 host 端口（数据卷保留）：
+
+```bash
+docker compose stop
+```
+
+访问地址与 Compose 一致：`localhost:8080` 管理后台、`localhost:8081` 商城、`localhost:8000-8002` API、`localhost:8888` 网关。
+
+回滚前先备份 k8s 侧数据；`k8s-down` 会删除 k8s 的 PVC：
+
+```bash
+make k8s-backup      # 导出 k8s MySQL 到 backups/
+make k8s-down        # 删除 k8s 集群，释放端口
+docker compose start # 恢复 Compose，Compose 数据卷未改动
+```
+
+注意：
+
+- MySQL root 密码只在空数据目录初始化时生效；修改 `.env` 后需在 MySQL 内执行 `ALTER USER`，不能只重跑 `k8s-secrets`。
+- MySQL 和 uploads 使用 local-path RWO 卷，Pod 绑定在单个节点；节点丢失或跨节点迁移需要手工处理 PV。
 
 ## 主要流程
 

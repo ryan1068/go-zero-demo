@@ -1,6 +1,7 @@
 .PHONY: build test lint fmt fmt-check check protogen clean \
 	run-gateway run-user-api run-user-rpc run-order-api run-order-rpc run-product-api run-product-rpc \
 	gen-model gen-check smoke db-backup k8s-up k8s-down k8s-status \
+	k8s-images k8s-secrets k8s-config k8s-deploy k8s-restore-db k8s-backup k8s-delete \
 	gen-user-api gen-order-api gen-product-api gen-user-rpc gen-order-rpc \
 	frontend-dev frontend-build
 
@@ -118,6 +119,42 @@ k8s-down:
 k8s-status:
 	@k3d cluster list
 	@kubectl get nodes -o wide
+
+k8s-images:
+	@./scripts/k8s-images.sh
+
+k8s-secrets:
+	@./scripts/k8s-secrets.sh
+
+k8s-config:
+	@./scripts/k8s-config.sh
+
+DB_BACKUP ?= $(shell ls -t backups/mysql-*.sql 2>/dev/null | head -1)
+RESTORE ?= 0
+FORCE ?= 0
+
+k8s-deploy: k8s-secrets k8s-config
+	kubectl apply -f deploy/k8s/base/namespace.yaml
+	kubectl apply -f deploy/k8s/base/infra.yaml
+	kubectl -n mall rollout status statefulset/mysql --timeout=300s
+	kubectl -n mall rollout status deployment/redis deployment/etcd --timeout=300s
+ifneq ($(RESTORE),0)
+	FORCE=$(FORCE) ./scripts/k8s-restore-db.sh "$(DB_BACKUP)"
+endif
+	kubectl apply -f deploy/k8s/base/apps.yaml
+	kubectl apply -f deploy/k8s/base/frontend.yaml
+	@for d in $$(kubectl -n mall get deployment -o name); do kubectl -n mall rollout restart $$d; done
+	kubectl -n mall rollout restart statefulset/mysql
+	kubectl -n mall wait --for=condition=Available deployment --all --timeout=300s
+
+k8s-restore-db:
+	@FORCE=$(FORCE) ./scripts/k8s-restore-db.sh "$(DB_BACKUP)"
+
+k8s-backup:
+	@./scripts/k8s-backup.sh
+
+k8s-delete:
+	kubectl delete namespace mall --ignore-not-found
 
 clean:
 	rm -rf app/*/api/internal/{handler,logic,types} app/*/rpc/pb app/*/rpc/*client

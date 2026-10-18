@@ -7,7 +7,27 @@ metadata:
 servers: 1
 agents: 2
 ports:
-  # 避开商城和管理后台占用的 8080/8081
+  # 前端：管理后台 / 商城（host 端口必须保持 8080/8081）
+  - port: 8080:30080
+    nodeFilters:
+      - loadbalancer
+  - port: 8081:30081
+    nodeFilters:
+      - loadbalancer
+  # API 与网关
+  - port: 8000:30000
+    nodeFilters:
+      - loadbalancer
+  - port: 8001:30001
+    nodeFilters:
+      - loadbalancer
+  - port: 8002:30002
+    nodeFilters:
+      - loadbalancer
+  - port: 8888:30088
+    nodeFilters:
+      - loadbalancer
+  # 预留给后续 Ingress
   - port: 8090:80
     nodeFilters:
       - loadbalancer

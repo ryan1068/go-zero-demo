@@ -1,0 +1,512 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: product-uploads
+  namespace: mall
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-rpc
+  namespace: mall
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-rpc
+  template:
+    metadata:
+      labels:
+        app: user-rpc
+    spec:
+      containers:
+        - name: user-rpc
+          image: user-rpc:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mall-secrets
+                  key: JWT_SECRET
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mall-secrets
+                  key: MYSQL_ROOT_PASSWORD
+          ports:
+            - name: rpc
+              containerPort: 9000
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: 9000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 9000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: user-rpc-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-rpc
+  namespace: mall
+spec:
+  selector:
+    app: user-rpc
+  ports:
+    - name: rpc
+      port: 9000
+      targetPort: 9000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-api
+  namespace: mall
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-api
+  template:
+    metadata:
+      labels:
+        app: user-api
+    spec:
+      containers:
+        - name: user-api
+          image: user-api:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mall-secrets
+                  key: JWT_SECRET
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mall-secrets
+                  key: REDIS_PASSWORD
+          ports:
+            - name: http
+              containerPort: 8000
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: user-api-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-api
+  namespace: mall
+spec:
+  type: NodePort
+  selector:
+    app: user-api
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      nodePort: 30000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-rpc
+  namespace: mall
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-rpc
+  template:
+    metadata:
+      labels:
+        app: order-rpc
+    spec:
+      containers:
+        - name: order-rpc
+          image: order-rpc:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mall-secrets
+                  key: MYSQL_ROOT_PASSWORD
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mall-secrets
+                  key: REDIS_PASSWORD
+          ports:
+            - name: rpc
+              containerPort: 9001
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: 9001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 9001
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: order-rpc-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-rpc
+  namespace: mall
+spec:
+  selector:
+    app: order-rpc
+  ports:
+    - name: rpc
+      port: 9001
+      targetPort: 9001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-api
+  namespace: mall
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-api
+  template:
+    metadata:
+      labels:
+        app: order-api
+    spec:
+      containers:
+        - name: order-api
+          image: order-api:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mall-secrets
+                  key: JWT_SECRET
+          ports:
+            - name: http
+              containerPort: 8001
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: 8001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8001
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: order-api-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-api
+  namespace: mall
+spec:
+  type: NodePort
+  selector:
+    app: order-api
+  ports:
+    - name: http
+      port: 8001
+      targetPort: 8001
+      nodePort: 30001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-rpc
+  namespace: mall
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: product-rpc
+  template:
+    metadata:
+      labels:
+        app: product-rpc
+    spec:
+      containers:
+        - name: product-rpc
+          image: product-rpc:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mall-secrets
+                  key: MYSQL_ROOT_PASSWORD
+          ports:
+            - name: rpc
+              containerPort: 9002
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: 9002
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 9002
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: product-rpc-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-rpc
+  namespace: mall
+spec:
+  selector:
+    app: product-rpc
+  ports:
+    - name: rpc
+      port: 9002
+      targetPort: 9002
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-api
+  namespace: mall
+spec:
+  replicas: 1
+  strategy:
+    # uploads 是 RWO 的 local-path 卷，滚动更新会因跨节点挂载失败而卡住
+    type: Recreate
+  selector:
+    matchLabels:
+      app: product-api
+  template:
+    metadata:
+      labels:
+        app: product-api
+    spec:
+      containers:
+        - name: product-api
+          image: product-api:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mall-secrets
+                  key: JWT_SECRET
+          ports:
+            - name: http
+              containerPort: 8002
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+              readOnly: true
+            - name: uploads
+              mountPath: /app/uploads
+          readinessProbe:
+            tcpSocket:
+              port: 8002
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8002
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: product-api-config
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: product-uploads
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-api
+  namespace: mall
+spec:
+  type: NodePort
+  selector:
+    app: product-api
+  ports:
+    - name: http
+      port: 8002
+      targetPort: 8002
+      nodePort: 30002
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: mall
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: gateway:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mall-secrets
+                  key: JWT_SECRET
+          ports:
+            - name: http
+              containerPort: 8888
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: 8888
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8888
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: gateway-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: mall
+spec:
+  type: NodePort
+  selector:
+    app: gateway
+  ports:
+    - name: http
+      port: 8888
+      targetPort: 8888
+      nodePort: 30088
