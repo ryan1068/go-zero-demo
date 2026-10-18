@@ -54,12 +54,12 @@ func (l *DashboardLogic) Dashboard(_ *order.EmptyReq) (*order.DashboardResp, err
 	}
 
 	return &order.DashboardResp{
-		Code:                  errcode.Success,
-		Msg:                   errcode.Msg(errcode.Success),
-		TodayOrderCount:       todayOrders,
-		TodayPaidAmount:       todayPaid,
-		PendingShipmentCount:  pendingShipment,
-		ProductCount:          productCount,
-		LowStockCount:         lowStockCount,
+		Code:                 errcode.Success,
+		Msg:                  errcode.Msg(errcode.Success),
+		TodayOrderCount:      todayOrders,
+		TodayPaidAmount:      todayPaid,
+		PendingShipmentCount: pendingShipment,
+		ProductCount:         productCount,
+		LowStockCount:        lowStockCount,
 	}, nil
 }

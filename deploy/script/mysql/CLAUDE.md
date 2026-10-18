@@ -47,13 +47,25 @@ SELECT * FROM user
 ## Go 模型生成
 
 ```bash
-# 使用 goctl 生成 model
-goctl model mysql ddl -src user.sql -dir .
+goctl model mysql datasource \
+  -url="root:$MYSQL_ROOT_PASSWORD@tcp(127.0.0.1:33069)/looklook_usercenter" \
+  -table="user,user_address,admin_audit_log" \
+  -dir=app/user/rpc/internal/model \
+  --style=goZero \
+  -i "create_at,created_at,create_time,update_at,updated_at,update_time,deleted_at"
 ```
 
 生成的文件：
 - `xxxModel_gen.go` — 自动生成，勿手动改
-- `xxxModel.go` — 自定义方法扩展
+- `xxxModel.go` — 接口扩展点，可加自定义方法签名
+- `xxxModel_custom.go` — 自定义查询/软删除/事务方法
+
+数据层规则：
+- 必须使用 goctl model + `sqlx`，禁止直接使用 `database/sql`
+- 不启用 model cache（order-rpc 跨库更新商品库存，缓存无法失效）
+- 软删除、分页筛选、全文检索、跨库查询写在自定义方法里
+- 事务用 `sqlx.SqlConn.TransactCtx`，业务回滚返回 `model.ErrAbortTransaction`
+- 可空列由 goctl 生成 `sql.NullTime` / `sql.NullString`，转换时检查 `Valid`
 
 ## 迁移规范
 

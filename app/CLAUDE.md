@@ -1,5 +1,16 @@
 # go-zero 后端开发规范
 
+## 核心原则
+
+**一律使用 go-zero/goctl 提供的能力，只有 go-zero 未提供时才自行实现，且优先复用 go-zero 的 `sqlx`。**
+
+- 数据访问：goctl 生成的 `internal/model` + `core/stores/sqlx`，禁止直接使用 `database/sql`
+- 配置：`sqlx.SqlConf`、`rest.RestConf`、`zrpc.RpcServerConf`
+- 事务：`sqlx.SqlConn.TransactCtx`
+- 指标：内置 `Prometheus` 配置，不手写 promhttp
+- 错误：`sqlx.ErrNotFound`（而不是 `sql.ErrNoRows`）
+- go-zero 未提供的能力（软删除、全文检索、跨库查询、multipart 上传）：在 `internal/model` 或 `internal/logic` 用 `sqlx`/标准库实现
+
 ## 目录结构
 
 ```
@@ -10,15 +21,33 @@
 │   └── internal/
 │       ├── config/config.go
 │       ├── handler/          # 自动生成，勿手动改
-│       ├── logic/            # 业务逻辑 (核心)
+│       ├── logic/            # 业务逻辑 (核心)，一文件一方法
+│       ├── middleware/       # 自定义中间件
 │       ├── svc/servicecontext.go
 │       └── types/types.go    # 自动生成
 └── rpc/                     # gRPC 服务
     └── internal/
+        ├── config/
         ├── logic/
+        ├── model/            # goctl 生成 + 自定义方法
         ├── server/
         └── svc/
 ```
+
+## Model 生成
+
+```bash
+goctl model mysql datasource \
+  -url="root:$MYSQL_ROOT_PASSWORD@tcp(127.0.0.1:33069)/looklook_xxx" \
+  -table="table1,table2" \
+  -dir=app/<service>/rpc/internal/model \
+  --style=goZero
+```
+
+- 生成文件 `xxxModel.go`、`xxxModel_gen.go`、`vars.go`，不要手改 `*_gen.go`
+- 自定义查询/软删除/事务方法写在同包手写文件（如 `xxxModel_custom.go`）
+- 当前不使用 model 缓存；order-rpc 跨库更新商品库存，缓存无法失效
+
 
 ## API 定义 (.api)
 

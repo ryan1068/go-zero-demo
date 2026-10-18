@@ -5,7 +5,6 @@ go 1.23.3
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/go-sql-driver/mysql v1.9.0
-	github.com/prometheus/client_golang v1.21.1
 	github.com/zeromicro/go-zero v1.8.5
 	go-zero-demo/pkg/errcode v0.0.0
 	golang.org/x/crypto v0.38.0
@@ -13,7 +12,10 @@ require (
 	google.golang.org/protobuf v1.36.6
 )
 
-require github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
+require (
+	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
+	github.com/prometheus/client_golang v1.21.1 // indirect
+)
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect

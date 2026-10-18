@@ -49,6 +49,20 @@
 
 字符集统一为 `utf8mb4`，排序规则统一为 `utf8mb4_unicode_ci`。MySQL 8 建表时必须显式写 `COLLATE=utf8mb4_unicode_ci`，只写 `DEFAULT CHARSET=utf8mb4` 会使用字符集自身的默认排序规则 `utf8mb4_0900_ai_ci`，导致库与表不一致。
 
+### 数据层
+
+三个 RPC 服务统一使用 goctl 生成的 `internal/model` + go-zero `sqlx`：
+
+- 不使用 `database/sql`；软删除、分页筛选、全文检索、跨库查询写在 `*Model_custom.go`
+- 事务使用 `sqlx.SqlConn.TransactCtx`，业务回滚返回 `model.ErrAbortTransaction`
+- 当前不启用 model cache；order-rpc 跨库更新商品库存，缓存无法失效
+- 重新生成：
+
+```bash
+export MYSQL_ROOT_PASSWORD='<mysql root 密码>'
+make gen-model
+```
+
 ## 快速开始
 
 ```bash
@@ -218,9 +232,9 @@ curl -s localhost:8001/admin/dashboard \
 ```text
 app/
 ├── gateway/          # 网关
-├── user/             # 用户 api + rpc
-├── order/            # 订单 api + rpc
-├── product/          # 商品 api + rpc
+├── user/             # 用户 api + rpc + model
+├── order/            # 订单 api + rpc + model
+├── product/          # 商品 api + rpc + model
 └── frontend/         # Vue3 商城 + 管理后台
 pkg/
 ├── auth/             # JWT、身份上下文

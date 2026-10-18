@@ -19,8 +19,8 @@ import (
 var (
 	adminAuditLogFieldNames          = builder.RawFieldNames(&AdminAuditLog{})
 	adminAuditLogRows                = strings.Join(adminAuditLogFieldNames, ",")
-	adminAuditLogRowsExpectAutoSet   = strings.Join(stringx.Remove(adminAuditLogFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), ",")
-	adminAuditLogRowsWithPlaceHolder = strings.Join(stringx.Remove(adminAuditLogFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), "=?,") + "=?"
+	adminAuditLogRowsExpectAutoSet   = strings.Join(stringx.Remove(adminAuditLogFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`deleted_at`", "`update_at`", "`update_time`", "`updated_at`"), ",")
+	adminAuditLogRowsWithPlaceHolder = strings.Join(stringx.Remove(adminAuditLogFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`deleted_at`", "`update_at`", "`update_time`", "`updated_at`"), "=?,") + "=?"
 )
 
 type (

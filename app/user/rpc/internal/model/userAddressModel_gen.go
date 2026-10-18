@@ -19,8 +19,8 @@ import (
 var (
 	userAddressFieldNames          = builder.RawFieldNames(&UserAddress{})
 	userAddressRows                = strings.Join(userAddressFieldNames, ",")
-	userAddressRowsExpectAutoSet   = strings.Join(stringx.Remove(userAddressFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), ",")
-	userAddressRowsWithPlaceHolder = strings.Join(stringx.Remove(userAddressFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`update_at`", "`update_time`", "`updated_at`"), "=?,") + "=?"
+	userAddressRowsExpectAutoSet   = strings.Join(stringx.Remove(userAddressFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`deleted_at`", "`update_at`", "`update_time`", "`updated_at`"), ",")
+	userAddressRowsWithPlaceHolder = strings.Join(stringx.Remove(userAddressFieldNames, "`id`", "`create_at`", "`create_time`", "`created_at`", "`deleted_at`", "`update_at`", "`update_time`", "`updated_at`"), "=?,") + "=?"
 )
 
 type (
@@ -82,14 +82,14 @@ func (m *defaultUserAddressModel) FindOne(ctx context.Context, id uint64) (*User
 }
 
 func (m *defaultUserAddressModel) Insert(ctx context.Context, data *UserAddress) (sql.Result, error) {
-	query := fmt.Sprintf("insert into %s (%s) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table, userAddressRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.UserId, data.ReceiverName, data.ReceiverPhone, data.Province, data.City, data.District, data.DetailAddress, data.PostalCode, data.Tag, data.IsDefault, data.DeletedAt)
+	query := fmt.Sprintf("insert into %s (%s) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table, userAddressRowsExpectAutoSet)
+	ret, err := m.conn.ExecCtx(ctx, query, data.UserId, data.ReceiverName, data.ReceiverPhone, data.Province, data.City, data.District, data.DetailAddress, data.PostalCode, data.Tag, data.IsDefault)
 	return ret, err
 }
 
 func (m *defaultUserAddressModel) Update(ctx context.Context, data *UserAddress) error {
 	query := fmt.Sprintf("update %s set %s where `id` = ?", m.table, userAddressRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, data.UserId, data.ReceiverName, data.ReceiverPhone, data.Province, data.City, data.District, data.DetailAddress, data.PostalCode, data.Tag, data.IsDefault, data.DeletedAt, data.Id)
+	_, err := m.conn.ExecCtx(ctx, query, data.UserId, data.ReceiverName, data.ReceiverPhone, data.Province, data.City, data.District, data.DetailAddress, data.PostalCode, data.Tag, data.IsDefault, data.Id)
 	return err
 }
 

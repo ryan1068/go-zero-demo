@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	insertUserSQL  = "(?i)insert into .user."
+	insertUserSQL   = "(?i)insert into .user."
 	findUserByIDSQL = "(?i)select .* from .user. where .id. = \\? limit 1"
 	insertAuditSQL  = "(?i)insert into .admin_audit_log."
 )
