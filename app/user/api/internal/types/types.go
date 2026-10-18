@@ -3,15 +3,124 @@
 
 package types
 
+type BaseResp struct {
+	Code int32  `json:"code"`
+	Msg  string `json:"msg"`
+}
+
+type CreateUserReq struct {
+	Username string `json:"username" validate:"required,min=3,max=64"`
+	Password string `json:"password" validate:"required,min=6,max=72"`
+	Nickname string `json:"nickname"`
+	Email    string `json:"email"`
+	Phone    string `json:"phone"`
+	Avatar   string `json:"avatar"`
+	Status   int32  `json:"status"`
+	Remark   string `json:"remark"`
+	Role     int32  `json:"role"`
+}
+
+type CreateUserResp struct {
+	Code int32    `json:"code"`
+	Msg  string   `json:"msg"`
+	Data UserInfo `json:"data"`
+}
+
+type RegisterReq struct {
+	Username string `json:"username" validate:"required,min=3,max=64"`
+	Password string `json:"password" validate:"required,min=6,max=72"`
+	Nickname string `json:"nickname"`
+	Email    string `json:"email"`
+	Phone    string `json:"phone"`
+}
+
+type RegisterResp struct {
+	Code int32    `json:"code"`
+	Msg  string   `json:"msg"`
+	Data UserInfo `json:"data"`
+}
+
+type ListUsersReq struct {
+	Page     int32  `form:"page,default=1"`
+	PageSize int32  `form:"page_size,default=10"`
+	Username string `form:"username,optional"`
+	Nickname string `form:"nickname,optional"`
+	Email    string `form:"email,optional"`
+	Phone    string `form:"phone,optional"`
+	Status   int32  `form:"status,default=0"`
+}
+
+type ListUsersResp struct {
+	Code int32        `json:"code"`
+	Msg  string       `json:"msg"`
+	Data UserListData `json:"data"`
+}
+
+type UpdateUserStatusReq struct {
+	Id     int64 `path:"id"`
+	Status int32 `json:"status"`
+}
+
+type LoginData struct {
+	Token    string `json:"token"`
+	UserId   int64  `json:"user_id"`
+	Username string `json:"username"`
+	Role     int32  `json:"role"`
+}
+
 type LoginReq struct {
 	Username string `json:"username" validate:"required"`
 	Password string `json:"password" validate:"required"`
+	IP       string `json:"-"`
+}
+
+type LogoutResp struct {
+	Code int32  `json:"code"`
+	Msg  string `json:"msg"`
+}
+
+type RegionInfo struct {
+	Id       int64  `json:"id"`
+	ParentId int64  `json:"parent_id"`
+	Name     string `json:"name"`
+	Level    int32  `json:"level"`
+}
+
+type ListRegionsReq struct {
+	ParentId int64 `form:"parent_id,default=0"`
+}
+
+type ListRegionsResp struct {
+	Code int32        `json:"code"`
+	Msg  string       `json:"msg"`
+	Data []RegionInfo `json:"data"`
 }
 
 type LoginResp struct {
-	Code  int32  `json:"code"`
-	Msg   string `json:"msg"`
-	Token string `json:"token"`
+	Code int32     `json:"code"`
+	Msg  string    `json:"msg"`
+	Data LoginData `json:"data"`
+}
+
+type UserInfo struct {
+	Id        int64  `json:"id"`
+	Username  string `json:"username"`
+	Nickname  string `json:"nickname"`
+	Email     string `json:"email"`
+	Phone     string `json:"phone"`
+	Avatar    string `json:"avatar"`
+	Status    int32  `json:"status"`
+	Remark    string `json:"remark"`
+	CreatedAt int64  `json:"created_at"`
+	UpdatedAt int64  `json:"updated_at"`
+	Role      int32  `json:"role"`
+}
+
+type UserListData struct {
+	List     []UserInfo `json:"list"`
+	Total    int64      `json:"total"`
+	Page     int32      `json:"page"`
+	PageSize int32      `json:"page_size"`
 }
 
 type UserReq struct {
@@ -19,5 +128,98 @@ type UserReq struct {
 }
 
 type UserResp struct {
-	Message string `json:"message"`
+	Code int32    `json:"code"`
+	Msg  string   `json:"msg"`
+	Data UserInfo `json:"data"`
+}
+
+type AddressInfo struct {
+	Id            int64  `json:"id"`
+	UserId        int64  `json:"user_id"`
+	ReceiverName  string `json:"receiver_name"`
+	ReceiverPhone string `json:"receiver_phone"`
+	Province      string `json:"province"`
+	City          string `json:"city"`
+	District      string `json:"district"`
+	DetailAddress string `json:"detail_address"`
+	PostalCode    string `json:"postal_code"`
+	Tag           string `json:"tag"`
+	IsDefault     int32  `json:"is_default"`
+	CreatedAt     int64  `json:"created_at"`
+	UpdatedAt     int64  `json:"updated_at"`
+}
+
+type AddressListData struct {
+	List []AddressInfo `json:"list"`
+}
+
+type ListAddressesResp struct {
+	Code int32           `json:"code"`
+	Msg  string          `json:"msg"`
+	Data AddressListData `json:"data"`
+}
+
+type SaveAddressReq struct {
+	Id            int64  `path:"id,optional"`
+	ReceiverName  string `json:"receiver_name" validate:"required,max=64"`
+	ReceiverPhone string `json:"receiver_phone" validate:"required,max=32"`
+	Province      string `json:"province"`
+	City          string `json:"city"`
+	District      string `json:"district"`
+	DetailAddress string `json:"detail_address" validate:"required,max=255"`
+	PostalCode    string `json:"postal_code"`
+	Tag           string `json:"tag"`
+	IsDefault     int32  `json:"is_default"`
+}
+
+type AddressResp struct {
+	Code int32       `json:"code"`
+	Msg  string      `json:"msg"`
+	Data AddressInfo `json:"data"`
+}
+
+type PathIdReq struct {
+	Id int64 `path:"id"`
+}
+
+type ChangePasswordReq struct {
+	OldPassword string `json:"old_password" validate:"required"`
+	NewPassword string `json:"new_password" validate:"required"`
+}
+
+type UpdateUserRoleReq struct {
+	Id   int64 `path:"id"`
+	Role int32 `json:"role"`
+}
+
+type AuditLogInfo struct {
+	Id         int64  `json:"id"`
+	AdminId    int64  `json:"admin_id"`
+	AdminName  string `json:"admin_name"`
+	Action     string `json:"action"`
+	TargetType string `json:"target_type"`
+	TargetId   int64  `json:"target_id"`
+	Detail     string `json:"detail"`
+	CreatedAt  int64  `json:"created_at"`
+}
+
+type ListAuditLogsReq struct {
+	Page       int32  `form:"page,default=1"`
+	PageSize   int32  `form:"page_size,default=20"`
+	AdminId    int64  `form:"admin_id,optional"`
+	Action     string `form:"action,optional"`
+	TargetType string `form:"target_type,optional"`
+}
+
+type AuditLogListData struct {
+	List     []AuditLogInfo `json:"list"`
+	Total    int64          `json:"total"`
+	Page     int32          `json:"page"`
+	PageSize int32          `json:"page_size"`
+}
+
+type ListAuditLogsResp struct {
+	Code int32            `json:"code"`
+	Msg  string           `json:"msg"`
+	Data AuditLogListData `json:"data"`
 }

@@ -24,3 +24,18 @@ Upstreams:
       - Method: post
         Path: /order/create
         RpcPath: order.Order/CreateOrder
+
+  - Grpc:
+      Target: etcd://etcd:2379/product.rpc
+    Mappings:
+      - Method: get
+        Path: /product/categories
+        RpcPath: product.Product/ListCategories
+      - Method: get
+        Path: /product/products
+        RpcPath: product.Product/ListProducts
+      - Method: get
+        Path: /product/:id
+        RpcPath: product.Product/GetProduct
+Jwt:
+  Secret: ${JWT_SECRET}

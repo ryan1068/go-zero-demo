@@ -2,9 +2,12 @@ package logic
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
 	"go-zero-demo/order-rpc/internal/svc"
 	"go-zero-demo/order-rpc/pb/order"
+	"go-zero-demo/pkg/auth"
 	"go-zero-demo/pkg/errcode"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -17,17 +20,25 @@ type GetOrderLogic struct {
 }
 
 func NewGetOrderLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetOrderLogic {
-	return &GetOrderLogic{
-		ctx:    ctx,
-		svcCtx: svcCtx,
-		Logger: logx.WithContext(ctx),
-	}
+	return &GetOrderLogic{ctx: ctx, svcCtx: svcCtx, Logger: logx.WithContext(ctx)}
 }
 
-func (l *GetOrderLogic) GetOrder(in *order.GetOrderReq) (*order.CommonResp, error) {
-	return &order.CommonResp{
-		Msg:  "ok",
-		Code: errcode.Success,
-		Data: "1111",
-	}, nil
+func (l *GetOrderLogic) GetOrder(in *order.GetOrderReq) (*order.OrderResp, error) {
+	userID, ok := auth.UserIDFromIncoming(l.ctx)
+	if !ok {
+		return &order.OrderResp{Code: errcode.Unauthorized, Msg: errcode.Msg(errcode.Unauthorized)}, nil
+	}
+	if in.Id <= 0 {
+		return &order.OrderResp{Code: errcode.BadRequest, Msg: errcode.Msg(errcode.BadRequest)}, nil
+	}
+
+	info, err := loadOrder(l.ctx, l.svcCtx.DB, in.Id, userID, in.Admin == 1)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		return &order.OrderResp{Code: errcode.NotFound, Msg: errcode.Msg(errcode.NotFound)}, nil
+	case err != nil:
+		l.Errorf("query order failed: %v", err)
+		return nil, err
+	}
+	return &order.OrderResp{Code: errcode.Success, Msg: errcode.Msg(errcode.Success), Data: info}, nil
 }

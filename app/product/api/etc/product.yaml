@@ -1,0 +1,15 @@
+Name: product-api
+Host: 0.0.0.0
+Port: 8002
+Mode: dev
+ProductRpcConf:
+  Etcd:
+    Hosts:
+      - etcd:2379
+    Key: product.rpc
+Jwt:
+  Secret: ${JWT_SECRET}
+Upload:
+  Dir: /app/uploads
+  URLPrefix: /api/product/uploads/
+  MaxSizeMB: 5

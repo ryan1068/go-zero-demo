@@ -32,3 +32,60 @@ func (s *UserServer) Login(ctx context.Context, in *user.LoginReq) (*user.LoginR
 	l := logic.NewLoginLogic(ctx, s.svcCtx)
 	return l.Login(in)
 }
+
+func (s *UserServer) Register(ctx context.Context, in *user.RegisterReq) (*user.RegisterResp, error) {
+	l := logic.NewRegisterLogic(ctx, s.svcCtx)
+	return l.Register(in)
+}
+
+func (s *UserServer) CreateUser(ctx context.Context, in *user.CreateUserReq) (*user.CreateUserResp, error) {
+	l := logic.NewCreateUserLogic(ctx, s.svcCtx)
+	return l.CreateUser(in)
+}
+
+func (s *UserServer) ListUsers(ctx context.Context, in *user.ListUsersReq) (*user.ListUsersResp, error) {
+	l := logic.NewListUsersLogic(ctx, s.svcCtx)
+	return l.ListUsers(in)
+}
+
+func (s *UserServer) UpdateUserStatus(ctx context.Context, in *user.UpdateUserStatusReq) (*user.BaseResp, error) {
+	l := logic.NewUpdateUserStatusLogic(ctx, s.svcCtx)
+	return l.UpdateUserStatus(in)
+}
+
+func (s *UserServer) ListAddresses(ctx context.Context, in *user.EmptyReq) (*user.ListAddressesResp, error) {
+	l := logic.NewListAddressesLogic(ctx, s.svcCtx)
+	return l.ListAddresses(in)
+}
+
+func (s *UserServer) CreateAddress(ctx context.Context, in *user.SaveAddressReq) (*user.AddressResp, error) {
+	l := logic.NewCreateAddressLogic(ctx, s.svcCtx)
+	return l.CreateAddress(in)
+}
+
+func (s *UserServer) UpdateAddress(ctx context.Context, in *user.SaveAddressReq) (*user.AddressResp, error) {
+	l := logic.NewUpdateAddressLogic(ctx, s.svcCtx)
+	return l.UpdateAddress(in)
+}
+
+func (s *UserServer) DeleteAddress(ctx context.Context, in *user.AddressReq) (*user.BaseResp, error) {
+	l := logic.NewDeleteAddressLogic(ctx, s.svcCtx)
+	return l.DeleteAddress(in)
+}
+
+func (s *UserServer) SetDefaultAddress(ctx context.Context, in *user.AddressReq) (*user.BaseResp, error) {
+	l := logic.NewSetDefaultAddressLogic(ctx, s.svcCtx)
+	return l.SetDefaultAddress(in)
+}
+
+func (s *UserServer) ChangePassword(ctx context.Context, in *user.ChangePasswordReq) (*user.BaseResp, error) {
+	return logic.NewChangePasswordLogic(ctx, s.svcCtx).ChangePassword(in)
+}
+
+func (s *UserServer) UpdateUserRole(ctx context.Context, in *user.UpdateUserRoleReq) (*user.BaseResp, error) {
+	return logic.NewUpdateUserRoleLogic(ctx, s.svcCtx).UpdateUserRole(in)
+}
+
+func (s *UserServer) ListAuditLogs(ctx context.Context, in *user.ListAuditLogsReq) (*user.ListAuditLogsResp, error) {
+	return logic.NewListAuditLogsLogic(ctx, s.svcCtx).ListAuditLogs(in)
+}

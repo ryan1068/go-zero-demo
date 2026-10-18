@@ -6,12 +6,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 
+	"go-zero-demo/pkg/auth"
 	"go-zero-demo/user-rpc/internal/config"
 	"go-zero-demo/user-rpc/internal/server"
 	"go-zero-demo/user-rpc/internal/svc"
 	"go-zero-demo/user-rpc/pb/user"
 
 	"github.com/zeromicro/go-zero/core/conf"
+	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
@@ -24,7 +26,10 @@ func main() {
 	flag.Parse()
 
 	var c config.Config
-	conf.MustLoad(*configFile, &c)
+	conf.MustLoad(*configFile, &c, conf.UseEnv())
+	if err := auth.ValidateSecret(c.Jwt.Secret); err != nil {
+		logx.Must(err)
+	}
 	// 启动Prometheus metrics服务
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())

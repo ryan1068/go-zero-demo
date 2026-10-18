@@ -6,6 +6,7 @@ const (
 	Unauthorized = 401
 	Forbidden    = 403
 	NotFound     = 404
+	Conflict     = 409
 	ServerError  = 500
 )
 
@@ -15,6 +16,7 @@ var msgMap = map[int32]string{
 	Unauthorized: "未授权",
 	Forbidden:    "无权限",
 	NotFound:     "资源不存在",
+	Conflict:     "资源已存在",
 	ServerError:  "服务器内部错误",
 }
 

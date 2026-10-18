@@ -1,0 +1,269 @@
+syntax = "v1"
+
+type BaseResp {
+	Code int32  `json:"code"`
+	Msg  string `json:"msg"`
+}
+
+type CategoryInfo {
+	Id        int64  `json:"id"`
+	ParentId  int64  `json:"parent_id"`
+	Name      string `json:"name"`
+	Icon      string `json:"icon"`
+	Sort      int32  `json:"sort"`
+	Status    int32  `json:"status"`
+	CreatedAt int64  `json:"created_at"`
+	UpdatedAt int64  `json:"updated_at"`
+}
+
+type ListCategoriesResp {
+	Code int32          `json:"code"`
+	Msg  string         `json:"msg"`
+	Data []CategoryInfo `json:"data"`
+}
+
+type CategoryResp {
+	Code int32        `json:"code"`
+	Msg  string       `json:"msg"`
+	Data CategoryInfo `json:"data"`
+}
+
+type SaveCategoryReq {
+	Id       int64  `path:"id,optional"`
+	ParentId int64  `json:"parent_id"`
+	Name     string `json:"name" validate:"required,max=64"`
+	Icon     string `json:"icon"`
+	Sort     int32  `json:"sort"`
+	Status   int32  `json:"status"`
+}
+
+type PathIdReq {
+	Id int64 `path:"id"`
+}
+
+type ProductInfo {
+	Id            int64    `json:"id"`
+	CategoryId    int64    `json:"category_id"`
+	CategoryName  string   `json:"category_name"`
+	Name          string   `json:"name"`
+	Subtitle      string   `json:"subtitle"`
+	CoverImage    string   `json:"cover_image"`
+	Images        []string `json:"images"`
+	Detail        string   `json:"detail"`
+	Price         int64    `json:"price"`
+	OriginalPrice int64    `json:"original_price"`
+	Stock         int32    `json:"stock"`
+	Sales         int32    `json:"sales"`
+	Unit          string   `json:"unit"`
+	Status        int32    `json:"status"`
+	IsRecommend   int32    `json:"is_recommend"`
+	Sort          int32    `json:"sort"`
+	CreatedAt     int64    `json:"created_at"`
+	UpdatedAt     int64    `json:"updated_at"`
+}
+
+type ListProductsReq {
+	Page       int32  `form:"page,default=1"`
+	PageSize   int32  `form:"page_size,default=12"`
+	CategoryId int64  `form:"category_id,optional"`
+	Keyword    string `form:"keyword,optional"`
+	MinPrice   int64  `form:"min_price,optional"`
+	MaxPrice   int64  `form:"max_price,optional"`
+	Status     int32  `form:"status,default=0"`
+	Sort       string `form:"sort,optional"`
+	LowStock   int32  `form:"low_stock,optional"`
+}
+
+type ProductListData {
+	List     []ProductInfo `json:"list"`
+	Total    int64         `json:"total"`
+	Page     int32         `json:"page"`
+	PageSize int32         `json:"page_size"`
+}
+
+type ListProductsResp {
+	Code int32           `json:"code"`
+	Msg  string          `json:"msg"`
+	Data ProductListData `json:"data"`
+}
+
+type ProductResp {
+	Code int32       `json:"code"`
+	Msg  string      `json:"msg"`
+	Data ProductInfo `json:"data"`
+}
+
+type SaveProductReq {
+	Id            int64    `path:"id,optional"`
+	CategoryId    int64    `json:"category_id" validate:"required"`
+	Name          string   `json:"name" validate:"required,max=128"`
+	Subtitle      string   `json:"subtitle"`
+	CoverImage    string   `json:"cover_image"`
+	Images        []string `json:"images"`
+	Detail        string   `json:"detail"`
+	Price         int64    `json:"price" validate:"required"`
+	OriginalPrice int64    `json:"original_price"`
+	Stock         int32    `json:"stock"`
+	Unit          string   `json:"unit"`
+	Status        int32    `json:"status"`
+	IsRecommend   int32    `json:"is_recommend"`
+	Sort          int32    `json:"sort"`
+}
+
+type UpdateProductStatusReq {
+	Id     int64 `path:"id"`
+	Status int32 `json:"status"`
+}
+
+type ProductStats {
+	Total    int64 `json:"total"`
+	OnSale   int64 `json:"on_sale"`
+	OffSale  int64 `json:"off_sale"`
+	LowStock int64 `json:"low_stock"`
+}
+
+type ProductStatsResp {
+	Code int32        `json:"code"`
+	Msg  string       `json:"msg"`
+	Data ProductStats `json:"data"`
+}
+
+type UploadNameReq {
+	Name string `path:"name"`
+}
+
+type UploadBatchResp {
+	Code int32    `json:"code"`
+	Msg  string   `json:"msg"`
+	Urls []string `json:"urls"`
+}
+
+
+type SkuInfo {
+	Id            int64  `json:"id"`
+	ProductId     int64  `json:"product_id"`
+	SkuCode       string `json:"sku_code"`
+	Specs         string `json:"specs"`
+	Price         int64  `json:"price"`
+	OriginalPrice int64  `json:"original_price"`
+	Stock         int32  `json:"stock"`
+	Sales         int32  `json:"sales"`
+	Status        int32  `json:"status"`
+	CreatedAt     int64  `json:"created_at"`
+	UpdatedAt     int64  `json:"updated_at"`
+}
+
+type SkuListResp {
+	Code int32     `json:"code"`
+	Msg  string    `json:"msg"`
+	List []SkuInfo `json:"list"`
+}
+
+type SaveSkuReq {
+	Id            int64  `json:"id,optional"`
+	ProductId     int64  `json:"product_id" validate:"required"`
+	SkuCode       string `json:"sku_code" validate:"required"`
+	Specs         string `json:"specs,optional"`
+	Price         int64  `json:"price" validate:"required"`
+	OriginalPrice int64  `json:"original_price,optional"`
+	Stock         int32  `json:"stock,optional"`
+	Status        int32  `json:"status,optional"`
+}
+
+type SkuResp {
+	Code int32   `json:"code"`
+	Msg  string  `json:"msg"`
+	Data SkuInfo `json:"data"`
+}
+
+type SkuIdReq {
+	Id int64 `path:"id"`
+}
+
+type SuggestReq {
+	Keyword string `form:"keyword"`
+	Limit   int32  `form:"limit,default=5"`
+}
+
+type SuggestResp {
+	Code int32    `json:"code"`
+	Msg  string   `json:"msg"`
+	Data []string `json:"data"`
+}
+
+type HotWordsResp {
+	Code int32    `json:"code"`
+	Msg  string   `json:"msg"`
+	Data []string `json:"data"`
+}
+
+service product-api {
+	@handler ListCategoriesHandler
+	get /categories () returns (ListCategoriesResp)
+
+	@handler ListProductsHandler
+	get /products (ListProductsReq) returns (ListProductsResp)
+
+	@handler GetProductHandler
+	get /product/:id (PathIdReq) returns (ProductResp)
+
+	@handler ServeUploadHandler
+	get /uploads/:name (UploadNameReq) returns (BaseResp)
+
+	@handler UploadBatchHandler
+	post /admin/uploads/batch () returns (UploadBatchResp)
+
+	@handler DeleteUploadHandler
+	delete /admin/uploads/:name (UploadNameReq) returns (BaseResp)
+
+	@handler AdminListCategoriesHandler
+	get /admin/categories () returns (ListCategoriesResp)
+
+	@handler SaveCategoryHandler
+	post /admin/categories (SaveCategoryReq) returns (CategoryResp)
+
+	@handler SaveCategoryHandler
+	put /admin/categories/:id (SaveCategoryReq) returns (CategoryResp)
+
+	@handler DeleteCategoryHandler
+	delete /admin/categories/:id (PathIdReq) returns (BaseResp)
+
+	@handler ProductStatsHandler
+	get /admin/products/stats () returns (ProductStatsResp)
+
+	@handler AdminListProductsHandler
+	get /admin/products (ListProductsReq) returns (ListProductsResp)
+
+	@handler AdminGetProductHandler
+	get /admin/products/:id (PathIdReq) returns (ProductResp)
+
+	@handler SaveProductHandler
+	post /admin/products (SaveProductReq) returns (ProductResp)
+
+	@handler SaveProductHandler
+	put /admin/products/:id (SaveProductReq) returns (ProductResp)
+
+	@handler DeleteProductHandler
+	delete /admin/products/:id (PathIdReq) returns (BaseResp)
+
+	@handler UpdateProductStatusHandler
+	put /admin/products/:id/status (UpdateProductStatusReq) returns (BaseResp)
+
+	@handler ListSkusHandler
+	get /product/:id/skus (PathIdReq) returns (SkuListResp)
+
+	@handler SuggestProductsHandler
+	get /products/suggest (SuggestReq) returns (SuggestResp)
+
+	@handler HotWordsHandler
+	get /products/hot () returns (HotWordsResp)
+
+	@handler ListSkusHandler
+	get /admin/products/:id/skus (PathIdReq) returns (SkuListResp)
+
+	@handler SaveSkuHandler
+	post /admin/skus (SaveSkuReq) returns (SkuResp)
+
+	@handler DeleteSkuHandler
+	delete /admin/skus/:id (SkuIdReq) returns (BaseResp)
+}

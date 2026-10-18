@@ -7,3 +7,5 @@ OrderRpcConf:
     Hosts:
       - etcd:2379
     Key: order.rpc
+Jwt:
+  Secret: ${JWT_SECRET}

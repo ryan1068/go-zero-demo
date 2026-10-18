@@ -4,8 +4,24 @@ type UserReq {
 	Name string `path:"name"`
 }
 
+type UserInfo {
+	Id        int64  `json:"id"`
+	Username  string `json:"username"`
+	Nickname  string `json:"nickname"`
+	Email     string `json:"email"`
+	Phone     string `json:"phone"`
+	Avatar    string `json:"avatar"`
+	Status    int32  `json:"status"`
+	Remark    string `json:"remark"`
+	CreatedAt int64  `json:"created_at"`
+	UpdatedAt int64  `json:"updated_at"`
+	Role      int32  `json:"role"`
+}
+
 type UserResp {
-	Message string `json:"message"`
+	Code int32    `json:"code"`
+	Msg  string   `json:"msg"`
+	Data UserInfo `json:"data"`
 }
 
 type LoginReq {
@@ -13,16 +29,244 @@ type LoginReq {
 	Password string `json:"password" validate:"required"`
 }
 
+type LoginData {
+	Token    string `json:"token"`
+	UserId   int64  `json:"user_id"`
+	Username string `json:"username"`
+	Role     int32  `json:"role"`
+}
+
 type LoginResp {
+	Code int32     `json:"code"`
+	Msg  string    `json:"msg"`
+	Data LoginData `json:"data"`
+}
+
+type RegisterReq {
+	Username string `json:"username" validate:"required,min=3,max=64"`
+	Password string `json:"password" validate:"required,min=6,max=72"`
+	Nickname string `json:"nickname"`
+	Email    string `json:"email"`
+	Phone    string `json:"phone"`
+}
+
+type RegisterResp {
+	Code int32    `json:"code"`
+	Msg  string   `json:"msg"`
+	Data UserInfo `json:"data"`
+}
+
+type CreateUserReq {
+	Username string `json:"username" validate:"required,min=3,max=64"`
+	Password string `json:"password" validate:"required,min=6,max=72"`
+	Nickname string `json:"nickname"`
+	Email    string `json:"email"`
+	Phone    string `json:"phone"`
+	Avatar   string `json:"avatar"`
+	Status   int32  `json:"status"`
+	Remark   string `json:"remark"`
+	Role     int32  `json:"role"`
+}
+
+type CreateUserResp {
+	Code int32    `json:"code"`
+	Msg  string   `json:"msg"`
+	Data UserInfo `json:"data"`
+}
+
+type ListUsersReq {
+	Page     int32  `form:"page,default=1"`
+	PageSize int32  `form:"page_size,default=10"`
+	Username string `form:"username,optional"`
+	Nickname string `form:"nickname,optional"`
+	Email    string `form:"email,optional"`
+	Phone    string `form:"phone,optional"`
+	Status   int32  `form:"status,default=0"`
+}
+
+type UserListData {
+	List     []UserInfo `json:"list"`
+	Total    int64      `json:"total"`
+	Page     int32      `json:"page"`
+	PageSize int32      `json:"page_size"`
+}
+
+type ListUsersResp {
+	Code int32        `json:"code"`
+	Msg  string       `json:"msg"`
+	Data UserListData `json:"data"`
+}
+
+type UpdateUserStatusReq {
+	Id     int64 `path:"id"`
+	Status int32 `json:"status"`
+}
+
+type BaseResp {
 	Code int32  `json:"code"`
 	Msg  string `json:"msg"`
 }
 
+type AddressInfo {
+	Id            int64  `json:"id"`
+	UserId        int64  `json:"user_id"`
+	ReceiverName  string `json:"receiver_name"`
+	ReceiverPhone string `json:"receiver_phone"`
+	Province      string `json:"province"`
+	City          string `json:"city"`
+	District      string `json:"district"`
+	DetailAddress string `json:"detail_address"`
+	PostalCode    string `json:"postal_code"`
+	Tag           string `json:"tag"`
+	IsDefault     int32  `json:"is_default"`
+	CreatedAt     int64  `json:"created_at"`
+	UpdatedAt     int64  `json:"updated_at"`
+}
+
+type SaveAddressReq {
+	Id            int64  `path:"id,optional"`
+	ReceiverName  string `json:"receiver_name" validate:"required,max=64"`
+	ReceiverPhone string `json:"receiver_phone" validate:"required,max=32"`
+	Province      string `json:"province"`
+	City          string `json:"city"`
+	District      string `json:"district"`
+	DetailAddress string `json:"detail_address" validate:"required,max=255"`
+	PostalCode    string `json:"postal_code"`
+	Tag           string `json:"tag"`
+	IsDefault     int32  `json:"is_default"`
+}
+
+type AddressResp {
+	Code int32       `json:"code"`
+	Msg  string      `json:"msg"`
+	Data AddressInfo `json:"data"`
+}
+
+type AddressListData {
+	List []AddressInfo `json:"list"`
+}
+
+type ListAddressesResp {
+	Code int32           `json:"code"`
+	Msg  string          `json:"msg"`
+	Data AddressListData `json:"data"`
+}
+
+type PathIdReq {
+	Id int64 `path:"id"`
+}
+
+
+type RegionInfo {
+	Id       int64  `json:"id"`
+	ParentId int64  `json:"parent_id"`
+	Name     string `json:"name"`
+	Level    int32  `json:"level"`
+}
+
+type ListRegionsReq {
+	ParentId int64 `form:"parent_id,default=0"`
+}
+
+type ListRegionsResp {
+	Code int32        `json:"code"`
+	Msg  string       `json:"msg"`
+	Data []RegionInfo `json:"data"`
+}
+
+type ChangePasswordReq {
+	OldPassword string `json:"old_password" validate:"required"`
+	NewPassword string `json:"new_password" validate:"required"`
+}
+
+type LogoutResp {
+	Code int32  `json:"code"`
+	Msg  string `json:"msg"`
+}
+
+type UpdateUserRoleReq {
+	Id   int64 `path:"id"`
+	Role int32 `json:"role"`
+}
+
+type AuditLogInfo {
+	Id         int64  `json:"id"`
+	AdminId    int64  `json:"admin_id"`
+	AdminName  string `json:"admin_name"`
+	Action     string `json:"action"`
+	TargetType string `json:"target_type"`
+	TargetId   int64  `json:"target_id"`
+	Detail     string `json:"detail"`
+	CreatedAt  int64  `json:"created_at"`
+}
+
+type ListAuditLogsReq {
+	Page       int32  `form:"page,default=1"`
+	PageSize   int32  `form:"page_size,default=20"`
+	AdminId    int64  `form:"admin_id,optional"`
+	Action     string `form:"action,optional"`
+	TargetType string `form:"target_type,optional"`
+}
+
+type AuditLogListData {
+	List     []AuditLogInfo `json:"list"`
+	Total    int64          `json:"total"`
+	Page     int32          `json:"page"`
+	PageSize int32          `json:"page_size"`
+}
+
+type ListAuditLogsResp {
+	Code int32            `json:"code"`
+	Msg  string           `json:"msg"`
+	Data AuditLogListData `json:"data"`
+}
+
 service user-api {
+	@handler LoginHandler
+	post /user/login (LoginReq) returns (LoginResp)
+
+	@handler RegisterHandler
+	post /user/register (RegisterReq) returns (RegisterResp)
+
 	@handler UserHandler
 	get /user/:name (UserReq) returns (UserResp)
 
-	@handler LoginHandler
-	post /user/login (LoginReq) returns (LoginResp)
-}
+	@handler CreateUserHandler
+	post /users (CreateUserReq) returns (CreateUserResp)
 
+	@handler ListUsersHandler
+	get /users (ListUsersReq) returns (ListUsersResp)
+
+	@handler UpdateUserStatusHandler
+	put /admin/users/:id/status (UpdateUserStatusReq) returns (BaseResp)
+
+	@handler ListAddressesHandler
+	get /addresses () returns (ListAddressesResp)
+
+	@handler CreateAddressHandler
+	post /addresses (SaveAddressReq) returns (AddressResp)
+
+	@handler UpdateAddressHandler
+	put /addresses/:id (SaveAddressReq) returns (AddressResp)
+
+	@handler DeleteAddressHandler
+	delete /addresses/:id (PathIdReq) returns (BaseResp)
+
+	@handler SetDefaultAddressHandler
+	put /addresses/:id/default (PathIdReq) returns (BaseResp)
+
+	@handler LogoutHandler
+	post /user/logout () returns (LogoutResp)
+
+	@handler ChangePasswordHandler
+	put /user/password (ChangePasswordReq) returns (BaseResp)
+
+	@handler ListRegionsHandler
+	get /user/regions (ListRegionsReq) returns (ListRegionsResp)
+
+	@handler UpdateUserRoleHandler
+	put /admin/users/:id/role (UpdateUserRoleReq) returns (BaseResp)
+
+	@handler ListAuditLogsHandler
+	get /admin/audit-logs (ListAuditLogsReq) returns (ListAuditLogsResp)
+}

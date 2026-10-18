@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"go-zero-demo/order-rpc/internal/config"
+	"go-zero-demo/order-rpc/internal/logic"
 	"go-zero-demo/order-rpc/internal/server"
 	"go-zero-demo/order-rpc/internal/svc"
 	"go-zero-demo/order-rpc/pb/order"
@@ -32,6 +33,7 @@ func main() {
 	}()
 
 	ctx := svc.NewServiceContext(c)
+	logic.StartTimeoutJob(ctx.DB)
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		order.RegisterOrderServer(grpcServer, server.NewOrderServer(ctx))

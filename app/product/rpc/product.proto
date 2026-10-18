@@ -1,0 +1,200 @@
+syntax = "proto3";
+
+package product;
+option go_package = "./product";
+
+message EmptyReq {}
+
+message BaseResp {
+  int32 code = 1;
+  string msg = 2;
+}
+
+message CategoryInfo {
+  int64 id = 1;
+  int64 parent_id = 2;
+  string name = 3;
+  string icon = 4;
+  int32 sort = 5;
+  int32 status = 6;
+  int64 created_at = 7;
+  int64 updated_at = 8;
+}
+
+message ListCategoriesReq {
+  int32 admin = 1;
+}
+
+message ListCategoriesResp {
+  int32 code = 1;
+  string msg = 2;
+  repeated CategoryInfo list = 3;
+}
+
+message CategoryReq {
+  int64 id = 1;
+}
+
+message CategoryResp {
+  int32 code = 1;
+  string msg = 2;
+  CategoryInfo data = 3;
+}
+
+message SaveCategoryReq {
+  int64 id = 1;
+  int64 parent_id = 2;
+  string name = 3;
+  string icon = 4;
+  int32 sort = 5;
+  int32 status = 6;
+}
+
+message ProductInfo {
+  int64 id = 1;
+  int64 category_id = 2;
+  string category_name = 3;
+  string name = 4;
+  string subtitle = 5;
+  string cover_image = 6;
+  repeated string images = 7;
+  string detail = 8;
+  int64 price = 9;
+  int64 original_price = 10;
+  int32 stock = 11;
+  int32 sales = 12;
+  string unit = 13;
+  int32 status = 14;
+  int32 is_recommend = 15;
+  int32 sort = 16;
+  int64 created_at = 17;
+  int64 updated_at = 18;
+}
+
+message ListProductsReq {
+  int32 page = 1;
+  int32 page_size = 2;
+  int64 category_id = 3;
+  string keyword = 4;
+  int64 min_price = 5;
+  int64 max_price = 6;
+  int32 status = 7;
+  string sort = 8;
+  int32 low_stock = 9;
+  int32 admin = 10;
+}
+
+message ListProductsResp {
+  int32 code = 1;
+  string msg = 2;
+  repeated ProductInfo list = 3;
+  int64 total = 4;
+  int32 page = 5;
+  int32 page_size = 6;
+}
+
+message ProductReq {
+  int64 id = 1;
+  int32 admin = 2;
+}
+
+message ProductResp {
+  int32 code = 1;
+  string msg = 2;
+  ProductInfo data = 3;
+}
+
+message SaveProductReq {
+  int64 id = 1;
+  int64 category_id = 2;
+  string name = 3;
+  string subtitle = 4;
+  string cover_image = 5;
+  repeated string images = 6;
+  string detail = 7;
+  int64 price = 8;
+  int64 original_price = 9;
+  int32 stock = 10;
+  string unit = 11;
+  int32 status = 12;
+  int32 is_recommend = 13;
+  int32 sort = 14;
+}
+
+message UpdateProductStatusReq {
+  int64 id = 1;
+  int32 status = 2;
+}
+
+message ProductStats {
+  int64 total = 1;
+  int64 on_sale = 2;
+  int64 off_sale = 3;
+  int64 low_stock = 4;
+}
+
+message ProductStatsResp {
+  int32 code = 1;
+  string msg = 2;
+  ProductStats data = 3;
+}
+
+message ProductIdReq {
+  int64 id = 1;
+}
+
+message SkuInfo {
+  int64 id = 1;
+  int64 product_id = 2;
+  string sku_code = 3;
+  string specs = 4;
+  int64 price = 5;
+  int64 original_price = 6;
+  int32 stock = 7;
+  int32 sales = 8;
+  int32 status = 9;
+  int64 created_at = 10;
+  int64 updated_at = 11;
+}
+
+message SkuListResp {
+  int32 code = 1;
+  string msg = 2;
+  repeated SkuInfo list = 3;
+}
+
+message SaveSkuReq {
+  int64 id = 1;
+  int64 product_id = 2;
+  string sku_code = 3;
+  string specs = 4;
+  int64 price = 5;
+  int64 original_price = 6;
+  int32 stock = 7;
+  int32 status = 8;
+}
+
+message SkuResp {
+  int32 code = 1;
+  string msg = 2;
+  SkuInfo data = 3;
+}
+
+message SkuIdReq {
+  int64 id = 1;
+}
+
+service Product {
+  rpc ListCategories(ListCategoriesReq) returns (ListCategoriesResp);
+  rpc SaveCategory(SaveCategoryReq) returns (CategoryResp);
+  rpc DeleteCategory(CategoryReq) returns (BaseResp);
+  rpc ListProducts(ListProductsReq) returns (ListProductsResp);
+  rpc GetProduct(ProductReq) returns (ProductResp);
+  rpc SaveProduct(SaveProductReq) returns (ProductResp);
+  rpc DeleteProduct(ProductIdReq) returns (BaseResp);
+  rpc UpdateProductStatus(UpdateProductStatusReq) returns (BaseResp);
+  rpc ProductStats(EmptyReq) returns (ProductStatsResp);
+  rpc ListSkus(ProductIdReq) returns (SkuListResp);
+  rpc SaveSku(SaveSkuReq) returns (SkuResp);
+  rpc DeleteSku(SkuIdReq) returns (BaseResp);
+}

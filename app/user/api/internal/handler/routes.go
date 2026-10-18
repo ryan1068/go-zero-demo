@@ -15,14 +15,84 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	server.AddRoutes(
 		[]rest.Route{
 			{
+				Method:  http.MethodPost,
+				Path:    "/user/login",
+				Handler: LoginHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/user/register",
+				Handler: RegisterHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/user/logout",
+				Handler: LogoutHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/user/password",
+				Handler: ChangePasswordHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/user/regions",
+				Handler: ListRegionsHandler(serverCtx),
+			},
+			{
 				Method:  http.MethodGet,
 				Path:    "/user/:name",
 				Handler: UserHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPost,
-				Path:    "/user/login",
-				Handler: LoginHandler(serverCtx),
+				Path:    "/users",
+				Handler: superAdminOnly(CreateUserHandler(serverCtx)),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/users",
+				Handler: adminOnly(ListUsersHandler(serverCtx)),
+			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/admin/users/:id/status",
+				Handler: superAdminOnly(UpdateUserStatusHandler(serverCtx)),
+			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/admin/users/:id/role",
+				Handler: superAdminOnly(UpdateUserRoleHandler(serverCtx)),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/admin/audit-logs",
+				Handler: adminOnly(ListAuditLogsHandler(serverCtx)),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/addresses",
+				Handler: ListAddressesHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/addresses",
+				Handler: CreateAddressHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/addresses/:id",
+				Handler: UpdateAddressHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodDelete,
+				Path:    "/addresses/:id",
+				Handler: DeleteAddressHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/addresses/:id/default",
+				Handler: SetDefaultAddressHandler(serverCtx),
 			},
 		},
 	)

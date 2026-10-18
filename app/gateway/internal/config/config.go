@@ -1,9 +1,13 @@
 package config
 
-import (
-	"github.com/zeromicro/go-zero/rest"
-)
+import "github.com/zeromicro/go-zero/gateway"
+
+// JwtConfig holds token verification settings.
+type JwtConfig struct {
+	Secret string
+}
 
 type Config struct {
-	rest.RestConf
+	gateway.GatewayConf
+	Jwt JwtConfig
 }

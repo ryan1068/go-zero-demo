@@ -14,14 +14,46 @@ import (
 )
 
 type (
-	LoginReq  = user.LoginReq
-	LoginResp = user.LoginResp
-	UserReq   = user.UserReq
-	UserResp  = user.UserResp
+	AddressInfo         = user.AddressInfo
+	AddressReq          = user.AddressReq
+	AddressResp         = user.AddressResp
+	AuditLogInfo        = user.AuditLogInfo
+	BaseResp            = user.BaseResp
+	ChangePasswordReq   = user.ChangePasswordReq
+	ListAuditLogsReq    = user.ListAuditLogsReq
+	ListAuditLogsResp   = user.ListAuditLogsResp
+	UpdateUserRoleReq   = user.UpdateUserRoleReq
+	CreateUserReq       = user.CreateUserReq
+	CreateUserResp      = user.CreateUserResp
+	EmptyReq            = user.EmptyReq
+	ListAddressesResp   = user.ListAddressesResp
+	ListUsersReq        = user.ListUsersReq
+	ListUsersResp       = user.ListUsersResp
+	LoginReq            = user.LoginReq
+	LoginResp           = user.LoginResp
+	RegisterReq         = user.RegisterReq
+	RegisterResp        = user.RegisterResp
+	SaveAddressReq      = user.SaveAddressReq
+	UpdateUserStatusReq = user.UpdateUserStatusReq
+	UserInfo            = user.UserInfo
+	UserReq             = user.UserReq
+	UserResp            = user.UserResp
 
 	User interface {
 		User(ctx context.Context, in *UserReq, opts ...grpc.CallOption) (*UserResp, error)
 		Login(ctx context.Context, in *LoginReq, opts ...grpc.CallOption) (*LoginResp, error)
+		Register(ctx context.Context, in *RegisterReq, opts ...grpc.CallOption) (*RegisterResp, error)
+		CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*CreateUserResp, error)
+		ListUsers(ctx context.Context, in *ListUsersReq, opts ...grpc.CallOption) (*ListUsersResp, error)
+		UpdateUserStatus(ctx context.Context, in *UpdateUserStatusReq, opts ...grpc.CallOption) (*BaseResp, error)
+		ListAddresses(ctx context.Context, in *EmptyReq, opts ...grpc.CallOption) (*ListAddressesResp, error)
+		CreateAddress(ctx context.Context, in *SaveAddressReq, opts ...grpc.CallOption) (*AddressResp, error)
+		UpdateAddress(ctx context.Context, in *SaveAddressReq, opts ...grpc.CallOption) (*AddressResp, error)
+		DeleteAddress(ctx context.Context, in *AddressReq, opts ...grpc.CallOption) (*BaseResp, error)
+		SetDefaultAddress(ctx context.Context, in *AddressReq, opts ...grpc.CallOption) (*BaseResp, error)
+		ChangePassword(ctx context.Context, in *ChangePasswordReq, opts ...grpc.CallOption) (*BaseResp, error)
+		UpdateUserRole(ctx context.Context, in *UpdateUserRoleReq, opts ...grpc.CallOption) (*BaseResp, error)
+		ListAuditLogs(ctx context.Context, in *ListAuditLogsReq, opts ...grpc.CallOption) (*ListAuditLogsResp, error)
 	}
 
 	defaultUser struct {
@@ -43,4 +75,64 @@ func (m *defaultUser) User(ctx context.Context, in *UserReq, opts ...grpc.CallOp
 func (m *defaultUser) Login(ctx context.Context, in *LoginReq, opts ...grpc.CallOption) (*LoginResp, error) {
 	client := user.NewUserClient(m.cli.Conn())
 	return client.Login(ctx, in, opts...)
+}
+
+func (m *defaultUser) Register(ctx context.Context, in *RegisterReq, opts ...grpc.CallOption) (*RegisterResp, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.Register(ctx, in, opts...)
+}
+
+func (m *defaultUser) CreateUser(ctx context.Context, in *CreateUserReq, opts ...grpc.CallOption) (*CreateUserResp, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.CreateUser(ctx, in, opts...)
+}
+
+func (m *defaultUser) ListUsers(ctx context.Context, in *ListUsersReq, opts ...grpc.CallOption) (*ListUsersResp, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.ListUsers(ctx, in, opts...)
+}
+
+func (m *defaultUser) UpdateUserStatus(ctx context.Context, in *UpdateUserStatusReq, opts ...grpc.CallOption) (*BaseResp, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.UpdateUserStatus(ctx, in, opts...)
+}
+
+func (m *defaultUser) ListAddresses(ctx context.Context, in *EmptyReq, opts ...grpc.CallOption) (*ListAddressesResp, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.ListAddresses(ctx, in, opts...)
+}
+
+func (m *defaultUser) CreateAddress(ctx context.Context, in *SaveAddressReq, opts ...grpc.CallOption) (*AddressResp, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.CreateAddress(ctx, in, opts...)
+}
+
+func (m *defaultUser) UpdateAddress(ctx context.Context, in *SaveAddressReq, opts ...grpc.CallOption) (*AddressResp, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.UpdateAddress(ctx, in, opts...)
+}
+
+func (m *defaultUser) DeleteAddress(ctx context.Context, in *AddressReq, opts ...grpc.CallOption) (*BaseResp, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.DeleteAddress(ctx, in, opts...)
+}
+
+func (m *defaultUser) SetDefaultAddress(ctx context.Context, in *AddressReq, opts ...grpc.CallOption) (*BaseResp, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.SetDefaultAddress(ctx, in, opts...)
+}
+
+func (m *defaultUser) ChangePassword(ctx context.Context, in *ChangePasswordReq, opts ...grpc.CallOption) (*BaseResp, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.ChangePassword(ctx, in, opts...)
+}
+
+func (m *defaultUser) UpdateUserRole(ctx context.Context, in *UpdateUserRoleReq, opts ...grpc.CallOption) (*BaseResp, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.UpdateUserRole(ctx, in, opts...)
+}
+
+func (m *defaultUser) ListAuditLogs(ctx context.Context, in *ListAuditLogsReq, opts ...grpc.CallOption) (*ListAuditLogsResp, error) {
+	client := user.NewUserClient(m.cli.Conn())
+	return client.ListAuditLogs(ctx, in, opts...)
 }

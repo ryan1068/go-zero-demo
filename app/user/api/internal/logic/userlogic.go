@@ -33,7 +33,12 @@ func (l *UserLogic) User(req *types.UserReq) (resp *types.UserResp, err error) {
 		return nil, err
 	}
 
-	resp = new(types.UserResp)
-	resp.Message = s.Message
+	resp = &types.UserResp{
+		Code: s.Code,
+		Msg:  s.Msg,
+	}
+	if s.Data != nil {
+		resp.Data = toUserInfo(s.Data)
+	}
 	return
 }

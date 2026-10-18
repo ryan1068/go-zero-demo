@@ -14,13 +14,53 @@ import (
 )
 
 type (
-	CommonResp     = order.CommonResp
-	CreateOrderReq = order.CreateOrderReq
-	GetOrderReq    = order.GetOrderReq
+	AddCartReq         = order.AddCartReq
+	AfterSaleInfo      = order.AfterSaleInfo
+	AfterSaleListResp  = order.AfterSaleListResp
+	AfterSaleReq       = order.AfterSaleReq
+	AfterSaleResp      = order.AfterSaleResp
+	ApplyAfterSaleReq  = order.ApplyAfterSaleReq
+	BaseResp           = order.BaseResp
+	CancelOrderReq     = order.CancelOrderReq
+	CartItemInfo       = order.CartItemInfo
+	CartItemReq        = order.CartItemReq
+	CartItemResp       = order.CartItemResp
+	CartListResp       = order.CartListResp
+	ConfirmOrderReq    = order.ConfirmOrderReq
+	CreateOrderReq     = order.CreateOrderReq
+	DashboardResp      = order.DashboardResp
+	EmptyReq           = order.EmptyReq
+	GetOrderReq        = order.GetOrderReq
+	HandleAfterSaleReq = order.HandleAfterSaleReq
+	ListAfterSalesReq  = order.ListAfterSalesReq
+	ListOrdersReq      = order.ListOrdersReq
+	OrderInfo          = order.OrderInfo
+	OrderItemInfo      = order.OrderItemInfo
+	OrderListResp      = order.OrderListResp
+	OrderResp          = order.OrderResp
+	PayOrderReq        = order.PayOrderReq
+	SelectCartReq      = order.SelectCartReq
+	ShipOrderReq       = order.ShipOrderReq
+	UpdateCartReq      = order.UpdateCartReq
 
 	Order interface {
-		GetOrder(ctx context.Context, in *GetOrderReq, opts ...grpc.CallOption) (*CommonResp, error)
-		CreateOrder(ctx context.Context, in *CreateOrderReq, opts ...grpc.CallOption) (*CommonResp, error)
+		AddCart(ctx context.Context, in *AddCartReq, opts ...grpc.CallOption) (*CartItemResp, error)
+		UpdateCart(ctx context.Context, in *UpdateCartReq, opts ...grpc.CallOption) (*CartItemResp, error)
+		DeleteCart(ctx context.Context, in *CartItemReq, opts ...grpc.CallOption) (*BaseResp, error)
+		SelectCart(ctx context.Context, in *SelectCartReq, opts ...grpc.CallOption) (*BaseResp, error)
+		ListCart(ctx context.Context, in *EmptyReq, opts ...grpc.CallOption) (*CartListResp, error)
+		CreateOrder(ctx context.Context, in *CreateOrderReq, opts ...grpc.CallOption) (*OrderResp, error)
+		GetOrder(ctx context.Context, in *GetOrderReq, opts ...grpc.CallOption) (*OrderResp, error)
+		ListOrders(ctx context.Context, in *ListOrdersReq, opts ...grpc.CallOption) (*OrderListResp, error)
+		PayOrder(ctx context.Context, in *PayOrderReq, opts ...grpc.CallOption) (*OrderResp, error)
+		CancelOrder(ctx context.Context, in *CancelOrderReq, opts ...grpc.CallOption) (*OrderResp, error)
+		ConfirmOrder(ctx context.Context, in *ConfirmOrderReq, opts ...grpc.CallOption) (*OrderResp, error)
+		ShipOrder(ctx context.Context, in *ShipOrderReq, opts ...grpc.CallOption) (*OrderResp, error)
+		Dashboard(ctx context.Context, in *EmptyReq, opts ...grpc.CallOption) (*DashboardResp, error)
+		ApplyAfterSale(ctx context.Context, in *ApplyAfterSaleReq, opts ...grpc.CallOption) (*AfterSaleResp, error)
+		ListAfterSales(ctx context.Context, in *ListAfterSalesReq, opts ...grpc.CallOption) (*AfterSaleListResp, error)
+		GetAfterSale(ctx context.Context, in *AfterSaleReq, opts ...grpc.CallOption) (*AfterSaleResp, error)
+		HandleAfterSale(ctx context.Context, in *HandleAfterSaleReq, opts ...grpc.CallOption) (*AfterSaleResp, error)
 	}
 
 	defaultOrder struct {
@@ -34,12 +74,87 @@ func NewOrder(cli zrpc.Client) Order {
 	}
 }
 
-func (m *defaultOrder) GetOrder(ctx context.Context, in *GetOrderReq, opts ...grpc.CallOption) (*CommonResp, error) {
+func (m *defaultOrder) AddCart(ctx context.Context, in *AddCartReq, opts ...grpc.CallOption) (*CartItemResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.AddCart(ctx, in, opts...)
+}
+
+func (m *defaultOrder) UpdateCart(ctx context.Context, in *UpdateCartReq, opts ...grpc.CallOption) (*CartItemResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.UpdateCart(ctx, in, opts...)
+}
+
+func (m *defaultOrder) DeleteCart(ctx context.Context, in *CartItemReq, opts ...grpc.CallOption) (*BaseResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.DeleteCart(ctx, in, opts...)
+}
+
+func (m *defaultOrder) SelectCart(ctx context.Context, in *SelectCartReq, opts ...grpc.CallOption) (*BaseResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.SelectCart(ctx, in, opts...)
+}
+
+func (m *defaultOrder) ListCart(ctx context.Context, in *EmptyReq, opts ...grpc.CallOption) (*CartListResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.ListCart(ctx, in, opts...)
+}
+
+func (m *defaultOrder) CreateOrder(ctx context.Context, in *CreateOrderReq, opts ...grpc.CallOption) (*OrderResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.CreateOrder(ctx, in, opts...)
+}
+
+func (m *defaultOrder) GetOrder(ctx context.Context, in *GetOrderReq, opts ...grpc.CallOption) (*OrderResp, error) {
 	client := order.NewOrderClient(m.cli.Conn())
 	return client.GetOrder(ctx, in, opts...)
 }
 
-func (m *defaultOrder) CreateOrder(ctx context.Context, in *CreateOrderReq, opts ...grpc.CallOption) (*CommonResp, error) {
+func (m *defaultOrder) ListOrders(ctx context.Context, in *ListOrdersReq, opts ...grpc.CallOption) (*OrderListResp, error) {
 	client := order.NewOrderClient(m.cli.Conn())
-	return client.CreateOrder(ctx, in, opts...)
+	return client.ListOrders(ctx, in, opts...)
+}
+
+func (m *defaultOrder) PayOrder(ctx context.Context, in *PayOrderReq, opts ...grpc.CallOption) (*OrderResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.PayOrder(ctx, in, opts...)
+}
+
+func (m *defaultOrder) CancelOrder(ctx context.Context, in *CancelOrderReq, opts ...grpc.CallOption) (*OrderResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.CancelOrder(ctx, in, opts...)
+}
+
+func (m *defaultOrder) ConfirmOrder(ctx context.Context, in *ConfirmOrderReq, opts ...grpc.CallOption) (*OrderResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.ConfirmOrder(ctx, in, opts...)
+}
+
+func (m *defaultOrder) ShipOrder(ctx context.Context, in *ShipOrderReq, opts ...grpc.CallOption) (*OrderResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.ShipOrder(ctx, in, opts...)
+}
+
+func (m *defaultOrder) Dashboard(ctx context.Context, in *EmptyReq, opts ...grpc.CallOption) (*DashboardResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.Dashboard(ctx, in, opts...)
+}
+
+func (m *defaultOrder) ApplyAfterSale(ctx context.Context, in *ApplyAfterSaleReq, opts ...grpc.CallOption) (*AfterSaleResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.ApplyAfterSale(ctx, in, opts...)
+}
+
+func (m *defaultOrder) ListAfterSales(ctx context.Context, in *ListAfterSalesReq, opts ...grpc.CallOption) (*AfterSaleListResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.ListAfterSales(ctx, in, opts...)
+}
+
+func (m *defaultOrder) GetAfterSale(ctx context.Context, in *AfterSaleReq, opts ...grpc.CallOption) (*AfterSaleResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.GetAfterSale(ctx, in, opts...)
+}
+
+func (m *defaultOrder) HandleAfterSale(ctx context.Context, in *HandleAfterSaleReq, opts ...grpc.CallOption) (*AfterSaleResp, error) {
+	client := order.NewOrderClient(m.cli.Conn())
+	return client.HandleAfterSale(ctx, in, opts...)
 }

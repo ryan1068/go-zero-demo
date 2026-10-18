@@ -23,12 +23,83 @@ func NewOrderServer(svcCtx *svc.ServiceContext) *OrderServer {
 	}
 }
 
-func (s *OrderServer) GetOrder(ctx context.Context, in *order.GetOrderReq) (*order.CommonResp, error) {
+func (s *OrderServer) AddCart(ctx context.Context, in *order.AddCartReq) (*order.CartItemResp, error) {
+	l := logic.NewAddCartLogic(ctx, s.svcCtx)
+	return l.AddCart(in)
+}
+
+func (s *OrderServer) UpdateCart(ctx context.Context, in *order.UpdateCartReq) (*order.CartItemResp, error) {
+	l := logic.NewUpdateCartLogic(ctx, s.svcCtx)
+	return l.UpdateCart(in)
+}
+
+func (s *OrderServer) DeleteCart(ctx context.Context, in *order.CartItemReq) (*order.BaseResp, error) {
+	l := logic.NewDeleteCartLogic(ctx, s.svcCtx)
+	return l.DeleteCart(in)
+}
+
+func (s *OrderServer) SelectCart(ctx context.Context, in *order.SelectCartReq) (*order.BaseResp, error) {
+	l := logic.NewSelectCartLogic(ctx, s.svcCtx)
+	return l.SelectCart(in)
+}
+
+func (s *OrderServer) ListCart(ctx context.Context, in *order.EmptyReq) (*order.CartListResp, error) {
+	l := logic.NewListCartLogic(ctx, s.svcCtx)
+	return l.ListCart(in)
+}
+
+func (s *OrderServer) CreateOrder(ctx context.Context, in *order.CreateOrderReq) (*order.OrderResp, error) {
+	l := logic.NewCreateOrderLogic(ctx, s.svcCtx)
+	return l.CreateOrder(in)
+}
+
+func (s *OrderServer) GetOrder(ctx context.Context, in *order.GetOrderReq) (*order.OrderResp, error) {
 	l := logic.NewGetOrderLogic(ctx, s.svcCtx)
 	return l.GetOrder(in)
 }
 
-func (s *OrderServer) CreateOrder(ctx context.Context, in *order.CreateOrderReq) (*order.CommonResp, error) {
-	l := logic.NewCreateOrderLogic(ctx, s.svcCtx)
-	return l.CreateOrder(in)
+func (s *OrderServer) ListOrders(ctx context.Context, in *order.ListOrdersReq) (*order.OrderListResp, error) {
+	l := logic.NewListOrdersLogic(ctx, s.svcCtx)
+	return l.ListOrders(in)
+}
+
+func (s *OrderServer) PayOrder(ctx context.Context, in *order.PayOrderReq) (*order.OrderResp, error) {
+	l := logic.NewPayOrderLogic(ctx, s.svcCtx)
+	return l.PayOrder(in)
+}
+
+func (s *OrderServer) CancelOrder(ctx context.Context, in *order.CancelOrderReq) (*order.OrderResp, error) {
+	l := logic.NewCancelOrderLogic(ctx, s.svcCtx)
+	return l.CancelOrder(in)
+}
+
+func (s *OrderServer) ConfirmOrder(ctx context.Context, in *order.ConfirmOrderReq) (*order.OrderResp, error) {
+	l := logic.NewConfirmOrderLogic(ctx, s.svcCtx)
+	return l.ConfirmOrder(in)
+}
+
+func (s *OrderServer) ShipOrder(ctx context.Context, in *order.ShipOrderReq) (*order.OrderResp, error) {
+	l := logic.NewShipOrderLogic(ctx, s.svcCtx)
+	return l.ShipOrder(in)
+}
+
+func (s *OrderServer) Dashboard(ctx context.Context, in *order.EmptyReq) (*order.DashboardResp, error) {
+	l := logic.NewDashboardLogic(ctx, s.svcCtx)
+	return l.Dashboard(in)
+}
+
+func (s *OrderServer) ApplyAfterSale(ctx context.Context, in *order.ApplyAfterSaleReq) (*order.AfterSaleResp, error) {
+	return logic.NewApplyAfterSaleLogic(ctx, s.svcCtx).ApplyAfterSale(in)
+}
+
+func (s *OrderServer) ListAfterSales(ctx context.Context, in *order.ListAfterSalesReq) (*order.AfterSaleListResp, error) {
+	return logic.NewListAfterSalesLogic(ctx, s.svcCtx).ListAfterSales(in)
+}
+
+func (s *OrderServer) GetAfterSale(ctx context.Context, in *order.AfterSaleReq) (*order.AfterSaleResp, error) {
+	return logic.NewGetAfterSaleLogic(ctx, s.svcCtx).GetAfterSale(in)
+}
+
+func (s *OrderServer) HandleAfterSale(ctx context.Context, in *order.HandleAfterSaleReq) (*order.AfterSaleResp, error) {
+	return logic.NewHandleAfterSaleLogic(ctx, s.svcCtx).HandleAfterSale(in)
 }

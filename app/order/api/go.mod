@@ -74,7 +74,6 @@ require (
 	golang.org/x/time v0.10.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250528174236-200df99c418a // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250528174236-200df99c418a // indirect
-	google.golang.org/grpc v1.74.2 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
@@ -94,6 +93,11 @@ require go-zero-demo/order-rpc v0.0.0
 
 replace go-zero-demo/order-rpc => ../rpc
 
-require go-zero-demo/user-rpc v0.0.0
+require (
+	go-zero-demo/pkg/auth v0.0.0
+	google.golang.org/grpc v1.74.2
+)
 
 replace go-zero-demo/user-rpc => ../../user/rpc
+
+replace go-zero-demo/pkg/auth => ../../../pkg/auth

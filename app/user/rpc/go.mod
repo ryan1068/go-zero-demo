@@ -13,6 +13,8 @@ require (
 	google.golang.org/protobuf v1.36.6
 )
 
+require github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
+
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -55,6 +57,7 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/redis/go-redis/v9 v9.11.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
+	go-zero-demo/pkg/auth v0.0.0
 	go.etcd.io/etcd/api/v3 v3.5.15 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.15 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.15 // indirect
@@ -97,3 +100,5 @@ require (
 )
 
 replace go-zero-demo/pkg/errcode => ../../../pkg/errcode
+
+replace go-zero-demo/pkg/auth => ../../../pkg/auth

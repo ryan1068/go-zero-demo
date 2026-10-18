@@ -1,0 +1,9 @@
+Name: product.rpc
+ListenOn: 0.0.0.0:9002
+Mode: dev
+Etcd:
+  Hosts:
+    - etcd:2379
+  Key: product.rpc
+Mysql:
+  DataSource: root:PXDN93VRKUm8TeE7@tcp(mysql:3306)/looklook_product?charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai

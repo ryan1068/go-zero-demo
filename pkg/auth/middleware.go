@@ -1,30 +1,35 @@
 package auth
 
 import (
-	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // Middleware returns an HTTP middleware that requires a valid JWT on every path
-// except the given skipPaths. Authenticated identity is stored in the request
-// context and forwarded as gRPC metadata headers for the gateway.
+// except the given skipPaths. A skip path ending in "/" is treated as a prefix.
+// Authenticated identity is stored in the request context and forwarded as gRPC
+// metadata headers for the gateway.
 func Middleware(secret string, skipPaths ...string) func(http.HandlerFunc) http.HandlerFunc {
-	skip := make(map[string]struct{}, len(skipPaths))
+	skipExact := make(map[string]struct{}, len(skipPaths))
+	skipPrefixes := make([]string, 0, len(skipPaths))
 	for _, path := range skipPaths {
-		skip[path] = struct{}{}
+		if strings.HasSuffix(path, "/") {
+			skipPrefixes = append(skipPrefixes, path)
+			continue
+		}
+		skipExact[path] = struct{}{}
 	}
 
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			if _, ok := skip[r.URL.Path]; ok {
+			if shouldSkip(r.URL.Path, skipExact, skipPrefixes) {
 				// Never trust identity headers supplied by the client.
 				r.Header.Del(metadataHeaderUserID)
 				r.Header.Del(metadataHeaderUsername)
+				r.Header.Del(metadataHeaderUserRole)
 				next(w, r)
 				return
 			}
@@ -40,18 +45,30 @@ func Middleware(secret string, skipPaths ...string) func(http.HandlerFunc) http.
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), userIDKey, claims.UserID)
-			ctx = context.WithValue(ctx, usernameKey, claims.Username)
+			ctx := WithUserRole(r.Context(), claims.UserID, claims.Username, claims.Role)
 			r = r.WithContext(ctx)
 
 			r.Header.Set(metadataHeaderUserID, strconv.FormatInt(claims.UserID, 10))
 			if claims.Username != "" {
 				r.Header.Set(metadataHeaderUsername, claims.Username)
 			}
+			r.Header.Set(metadataHeaderUserRole, strconv.FormatInt(int64(claims.Role), 10))
 
 			next(w, r)
 		}
 	}
+}
+
+func shouldSkip(path string, exact map[string]struct{}, prefixes []string) bool {
+	if _, ok := exact[path]; ok {
+		return true
+	}
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(path, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 func tokenFromRequest(r *http.Request) (string, error) {
@@ -66,7 +83,7 @@ func tokenFromRequest(r *http.Request) (string, error) {
 }
 
 func writeUnauthorized(w http.ResponseWriter, err error) {
-	logx.Errorf("unauthorized request: %v", err)
+	log.Printf("unauthorized request: %v", err)
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(http.StatusUnauthorized)
@@ -74,6 +91,6 @@ func writeUnauthorized(w http.ResponseWriter, err error) {
 		"code": http.StatusUnauthorized,
 		"msg":  "未授权",
 	}); encodeErr != nil {
-		logx.Errorf("failed to write unauthorized response: %v", encodeErr)
+		log.Printf("failed to write unauthorized response: %v", encodeErr)
 	}
 }
