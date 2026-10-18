@@ -13,6 +13,9 @@ Upload:
   Dir: /app/uploads
   URLPrefix: /api/product/uploads/
   MaxSizeMB: 5
+Media:
+  # 旧上传 URL 兼容代理；新文件统一走 media 服务
+  Url: http://media-api:8003
 Prometheus:
   Host: 0.0.0.0
   Port: 9104

@@ -1,0 +1,34 @@
+package handler
+
+import (
+	"net/http"
+
+	"go-zero-demo/media-api/internal/svc"
+
+	"github.com/zeromicro/go-zero/rest"
+)
+
+func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
+	server.AddRoutes([]rest.Route{
+		{
+			Method:  http.MethodPost,
+			Path:    "/upload",
+			Handler: UploadHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodPost,
+			Path:    "/uploads/batch",
+			Handler: UploadBatchHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodDelete,
+			Path:    "/admin/files/:name",
+			Handler: DeleteFileHandler(serverCtx),
+		},
+		{
+			Method:  http.MethodGet,
+			Path:    "/files/:name",
+			Handler: ServeFileHandler(serverCtx),
+		},
+	})
+}

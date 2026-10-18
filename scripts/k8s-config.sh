@@ -13,6 +13,7 @@ pairs=(
   "product-api:app/product/api/etc/product.yaml"
   "product-rpc:app/product/rpc/etc/product.yaml"
   "gateway:app/gateway/etc/gateway.yaml"
+  "media-api:app/media/api/etc/media-api.yaml"
 )
 
 for pair in "${pairs[@]}"; do
@@ -33,6 +34,7 @@ kubectl -n mall create configmap mysql-init \
   --from-file=01-init-user.sql=deploy/sql/init_user.sql \
   --from-file=02-init-order.sql=deploy/sql/init_order.sql \
   --from-file=03-init-product.sql=deploy/sql/init_product.sql \
+  --from-file=04-init-media.sql=deploy/sql/init_media.sql \
   --dry-run=client -o yaml | kubectl apply -f -
 
 echo "configmaps applied"

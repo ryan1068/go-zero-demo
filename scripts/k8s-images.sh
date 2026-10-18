@@ -14,6 +14,7 @@ images=(
   order-api:local
   product-rpc:local
   product-api:local
+  media-api:local
   frontend:local
 )
 

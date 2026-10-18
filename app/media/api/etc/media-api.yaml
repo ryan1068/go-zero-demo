@@ -1,0 +1,16 @@
+Name: media-api
+Host: 0.0.0.0
+Port: 8003
+Mode: dev
+Mysql:
+  DataSource: root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/looklook_media?charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=true&loc=Asia%2FShanghai
+Jwt:
+  Secret: ${JWT_SECRET}
+Upload:
+  Dir: /app/uploads
+  URLPrefix: /api/media/files/
+  MaxSizeMB: 10
+Prometheus:
+  Host: 0.0.0.0
+  Port: 9106
+  Path: /metrics

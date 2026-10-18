@@ -43,3 +43,5 @@ export const userRequest = createRequest('/api/user')
 export const orderRequest = createRequest('/api/order')
 /** 商品服务请求实例 */
 export const productRequest = createRequest('/api/product')
+/** 媒体服务请求实例 */
+export const mediaRequest = createRequest('/api/media')

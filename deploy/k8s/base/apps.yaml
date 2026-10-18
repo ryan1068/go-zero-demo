@@ -11,6 +11,19 @@ spec:
     requests:
       storage: 2Gi
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: media-files
+  namespace: mall
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -501,6 +514,86 @@ spec:
       port: 8002
       targetPort: 8002
       nodePort: 30002
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: media-api
+  namespace: mall
+spec:
+  replicas: 1
+  strategy:
+    # 本机磁盘 + RWO 卷，跨节点滚动会挂载失败
+    type: Recreate
+  selector:
+    matchLabels:
+      app: media-api
+  template:
+    metadata:
+      labels:
+        app: media-api
+    spec:
+      containers:
+        - name: media-api
+          image: media-api:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: mall-secrets
+                  key: JWT_SECRET
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mall-secrets
+                  key: MYSQL_ROOT_PASSWORD
+          ports:
+            - name: http
+              containerPort: 8003
+          volumeMounts:
+            - name: config
+              mountPath: /app/etc
+              readOnly: true
+            - name: files
+              mountPath: /app/uploads
+          readinessProbe:
+            tcpSocket:
+              port: 8003
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8003
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: media-api-config
+        - name: files
+          persistentVolumeClaim:
+            claimName: media-files
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: media-api
+  namespace: mall
+spec:
+  selector:
+    app: media-api
+  ports:
+    - name: http
+      port: 8003
+      targetPort: 8003
 ---
 apiVersion: apps/v1
 kind: Deployment

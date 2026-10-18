@@ -1,0 +1,43 @@
+syntax = "v1"
+
+info (
+	title:   "media api"
+	desc:    "媒体上传、读取与删除"
+	version: "1.0"
+)
+
+type UploadResp {
+	Code int32  `json:"code"`
+	Msg  string `json:"msg"`
+	Url  string `json:"url"`
+}
+
+type UploadBatchResp {
+	Code int32    `json:"code"`
+	Msg  string   `json:"msg"`
+	Urls []string `json:"urls"`
+}
+
+type BaseResp {
+	Code int32  `json:"code"`
+	Msg  string `json:"msg"`
+}
+
+type UploadNameReq {
+	Name string `path:"name"`
+}
+
+service media-api {
+	@handler UploadHandler
+	post /upload returns (UploadResp)
+
+	@handler UploadBatchHandler
+	post /uploads/batch returns (UploadBatchResp)
+
+	@handler DeleteFileHandler
+	delete /admin/files/:name (UploadNameReq) returns (BaseResp)
+
+	@handler ServeFileHandler
+	get /files/:name (UploadNameReq) returns (BaseResp)
+}
+

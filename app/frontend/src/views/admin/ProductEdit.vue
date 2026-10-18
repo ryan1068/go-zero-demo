@@ -5,15 +5,13 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import {
   deleteSku,
-  deleteUpload,
   getProduct,
   listCategories,
   listSkus,
   saveProduct,
   saveSku,
-  uploadImage,
-  uploadImages,
 } from '@/api/product'
+import { deleteMedia, uploadImage, uploadImages } from '@/api/media'
 import type { CategoryInfo, SaveSkuReq, SkuInfo } from '@/types/api'
 
 const route = useRoute()
@@ -158,7 +156,7 @@ async function removeImage(url: string) {
     const name = url.split('/').pop()
     if (name) {
       try {
-        await deleteUpload(name)
+        await deleteMedia(name)
       } catch {
         // 文件删除失败不影响商品图片列表。
       }

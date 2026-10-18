@@ -200,6 +200,7 @@ services:
       - ./deploy/sql/init_user.sql:/docker-entrypoint-initdb.d/01-init-user.sql
       - ./deploy/sql/init_order.sql:/docker-entrypoint-initdb.d/02-init-order.sql
       - ./deploy/sql/init_product.sql:/docker-entrypoint-initdb.d/03-init-product.sql
+      - ./deploy/sql/init_media.sql:/docker-entrypoint-initdb.d/04-init-media.sql
       # 日志
     command:
       # 将mysql8.0默认密码策略 修改为 原先 策略 (mysql8.0对其默认策略做了更改 会导致密码无法匹配) 
@@ -390,6 +391,27 @@ services:
       - etcd
       - product-rpc
 
+  # 媒体服务 — 统一上传/读取
+  media-api:
+    image: media-api:local
+    build:
+      context: .
+      dockerfile: app/media/api/Dockerfile
+    container_name: media-api
+    restart: unless-stopped
+    expose:
+      - "8003"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:?请先复制 .env.example 为 .env 并设置 JWT_SECRET}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:?请先复制 .env.example 为 .env 并设置 MYSQL_ROOT_PASSWORD}
+    volumes:
+      - ./app/media/api/etc:/app/etc
+      - ./data/uploads:/app/uploads
+    networks:
+      - looklook_net
+    depends_on:
+      - mysql
+
   # 前端 — Vue 3 + Element Plus 后台管理
   frontend:
     image: frontend:local
@@ -405,6 +427,7 @@ services:
       - user-api
       - order-api
       - product-api
+      - media-api
 
 volumes:
   etcd_data:
