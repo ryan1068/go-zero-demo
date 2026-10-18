@@ -75,3 +75,5 @@
 6. `make smoke` 通过
 7. users / products / orders 计数与 Compose 一致
 8. Compose 仍可一键恢复
+
+> 2026-10-18 后续：无状态服务已扩到 3 副本，见 `docs/adr/0002-k8s-ha-topology.md`。

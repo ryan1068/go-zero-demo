@@ -159,6 +159,14 @@ make k8s-backup                                         # 导出 k8s 中的数�
 
 `k8s-deploy` 会重启所有 Deployment/MySQL，确保新镜像、ConfigMap 和 Secret 生效。
 
+### 高可用拓扑
+
+- gateway、frontend、user/order/product 的 api 和 rpc：**3 副本**，硬拓扑分散为每节点 1 个
+- 滚动更新 `maxSurge: 0` / `maxUnavailable: 1`，PodDisruptionBudget `minAvailable: 2`
+- product-api：**1 副本**（uploads 是 local-path RWO 卷）
+- MySQL / Redis / etcd：**1 副本**，仍是单点
+- 决策记录见 `docs/adr/0002-k8s-ha-topology.md`
+
 切换前先停止 Compose 释放 host 端口（数据卷保留）：
 
 ```bash
