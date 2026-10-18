@@ -26,42 +26,40 @@ func (l *DashboardLogic) Dashboard(_ *order.EmptyReq) (*order.DashboardResp, err
 		return &order.DashboardResp{Code: errcode.Unauthorized, Msg: errcode.Msg(errcode.Unauthorized)}, nil
 	}
 
-	var resp order.DashboardResp
-	if err := l.svcCtx.DB.QueryRowContext(l.ctx,
-		"SELECT COUNT(*) FROM orders WHERE deleted_at IS NULL AND created_at >= CURDATE()",
-	).Scan(&resp.TodayOrderCount); err != nil {
+	todayOrders, err := l.svcCtx.OrdersModel.CountTodayOrders(l.ctx, nil)
+	if err != nil {
 		l.Errorf("count today orders failed: %v", err)
 		return nil, err
 	}
-	if err := l.svcCtx.DB.QueryRowContext(l.ctx,
-		"SELECT COALESCE(SUM(pay_amount), 0) FROM orders WHERE deleted_at IS NULL AND status IN (?, ?, ?) AND paid_at >= CURDATE()",
-		orderStatusPendingShipment, orderStatusShipped, orderStatusCompleted,
-	).Scan(&resp.TodayPaidAmount); err != nil {
+	todayPaid, err := l.svcCtx.OrdersModel.SumTodayPaidAmount(l.ctx, nil,
+		[]int64{orderStatusPendingShipment, orderStatusShipped, orderStatusCompleted})
+	if err != nil {
 		l.Errorf("sum today paid amount failed: %v", err)
 		return nil, err
 	}
-	if err := l.svcCtx.DB.QueryRowContext(l.ctx,
-		"SELECT COUNT(*) FROM orders WHERE deleted_at IS NULL AND status = ?",
-		orderStatusPendingShipment,
-	).Scan(&resp.PendingShipmentCount); err != nil {
+	pendingShipment, err := l.svcCtx.OrdersModel.CountPendingShipment(l.ctx, nil, orderStatusPendingShipment)
+	if err != nil {
 		l.Errorf("count pending shipment orders failed: %v", err)
 		return nil, err
 	}
-	if err := l.svcCtx.DB.QueryRowContext(l.ctx,
-		"SELECT COUNT(*) FROM looklook_product.product WHERE deleted_at IS NULL",
-	).Scan(&resp.ProductCount); err != nil {
+	productCount, err := l.svcCtx.ProductModel.CountProducts(l.ctx, nil)
+	if err != nil {
 		l.Errorf("count products failed: %v", err)
 		return nil, err
 	}
-	if err := l.svcCtx.DB.QueryRowContext(l.ctx,
-		"SELECT COUNT(*) FROM looklook_product.product WHERE deleted_at IS NULL AND status = 1 AND stock <= ?",
-		lowStockThreshold,
-	).Scan(&resp.LowStockCount); err != nil {
+	lowStockCount, err := l.svcCtx.ProductModel.CountLowStock(l.ctx, nil, lowStockThreshold)
+	if err != nil {
 		l.Errorf("count low stock products failed: %v", err)
 		return nil, err
 	}
 
-	resp.Code = errcode.Success
-	resp.Msg = errcode.Msg(errcode.Success)
-	return &resp, nil
+	return &order.DashboardResp{
+		Code:                  errcode.Success,
+		Msg:                   errcode.Msg(errcode.Success),
+		TodayOrderCount:       todayOrders,
+		TodayPaidAmount:       todayPaid,
+		PendingShipmentCount:  pendingShipment,
+		ProductCount:          productCount,
+		LowStockCount:         lowStockCount,
+	}, nil
 }

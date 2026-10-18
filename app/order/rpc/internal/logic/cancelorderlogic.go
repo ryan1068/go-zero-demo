@@ -2,17 +2,18 @@ package logic
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"strings"
 	"unicode/utf8"
 
+	"go-zero-demo/order-rpc/internal/model"
 	"go-zero-demo/order-rpc/internal/svc"
 	"go-zero-demo/order-rpc/pb/order"
 	"go-zero-demo/pkg/auth"
 	"go-zero-demo/pkg/errcode"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
 type CancelOrderLogic struct {
@@ -46,73 +47,74 @@ func (l *CancelOrderLogic) CancelOrder(in *order.CancelOrderReq) (*order.OrderRe
 		}
 	}
 
-	tx, err := l.svcCtx.DB.BeginTx(l.ctx, nil)
-	if err != nil {
-		l.Errorf("begin cancel transaction failed: %v", err)
-		return nil, err
-	}
-	defer rollbackTx(l.Logger, tx)
-
-	query := "SELECT status FROM orders WHERE id = ? AND deleted_at IS NULL FOR UPDATE"
-	args := []any{in.Id}
-	if !admin {
-		query = "SELECT status FROM orders WHERE id = ? AND user_id = ? AND deleted_at IS NULL FOR UPDATE"
-		args = append(args, userID)
-	}
-	var status int32
-	err = tx.QueryRowContext(l.ctx, query, args...).Scan(&status)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return &order.OrderResp{Code: errcode.NotFound, Msg: errcode.Msg(errcode.NotFound)}, nil
-	case err != nil:
-		l.Errorf("query order failed: %v", err)
-		return nil, err
-	}
-
-	if status == orderStatusCanceled {
-		info, err := loadOrder(l.ctx, tx, in.Id, userID, admin)
+	var resp *order.OrderResp
+	err := l.svcCtx.DB.TransactCtx(l.ctx, func(ctx context.Context, session sqlx.Session) error {
+		var owner *int64
+		if !admin {
+			owner = &userID
+		}
+		lock, err := l.svcCtx.OrdersModel.LockOrder(ctx, session, in.Id, owner)
+		if errors.Is(err, sqlx.ErrNotFound) {
+			resp = &order.OrderResp{Code: errcode.NotFound, Msg: errcode.Msg(errcode.NotFound)}
+			return model.ErrAbortTransaction
+		}
 		if err != nil {
-			l.Errorf("query canceled order failed: %v", err)
-			return nil, err
+			return err
 		}
-		if err := tx.Commit(); err != nil {
-			l.Errorf("commit cancel transaction failed: %v", err)
-			return nil, err
+
+		if lock.Status == orderStatusCanceled {
+			info, err := loadOrderInfo(ctx, l.svcCtx, session, in.Id, userID, admin)
+			if err != nil {
+				return err
+			}
+			resp = &order.OrderResp{Code: errcode.Success, Msg: errcode.Msg(errcode.Success), Data: info}
+			return nil
 		}
-		return &order.OrderResp{Code: errcode.Success, Msg: errcode.Msg(errcode.Success), Data: info}, nil
-	}
-	if status != orderStatusPendingPayment && status != orderStatusPendingShipment {
-		return &order.OrderResp{Code: errcode.BadRequest, Msg: "订单已发货，不能取消"}, nil
-	}
+		if lock.Status != orderStatusPendingPayment && lock.Status != orderStatusPendingShipment {
+			resp = &order.OrderResp{Code: errcode.BadRequest, Msg: "订单已发货，不能取消"}
+			return model.ErrAbortTransaction
+		}
 
-	if _, err := tx.ExecContext(l.ctx,
-		"UPDATE orders SET status = ?, canceled_at = NOW(), cancel_reason = ? WHERE id = ?",
-		orderStatusCanceled, reason, in.Id,
-	); err != nil {
-		l.Errorf("update order cancel status failed: %v", err)
-		return nil, err
-	}
-	if err := restoreStock(l.ctx, tx, in.Id); err != nil {
-		l.Errorf("restore product stock failed: %v", err)
-		return nil, err
-	}
-	operatorType := int32(operatorUser)
-	if admin {
-		operatorType = operatorAdmin
-	}
-	if err := writeOrderLog(l.ctx, tx, in.Id, status, orderStatusCanceled, operatorType, userID, reason); err != nil {
-		l.Errorf("write order log failed: %v", err)
-		return nil, err
-	}
+		if _, err := l.svcCtx.OrdersModel.UpdateOrderCanceled(ctx, session, in.Id, orderStatusCanceled, reason); err != nil {
+			return err
+		}
+		lines, err := l.svcCtx.OrderItemModel.StockLines(ctx, session, in.Id)
+		if err != nil {
+			return err
+		}
+		for _, line := range lines {
+			if err := l.svcCtx.ProductModel.RestoreStock(ctx, session, line.ProductId, line.Quantity); err != nil {
+				return err
+			}
+		}
+		operatorType := int64(operatorUser)
+		if admin {
+			operatorType = operatorAdmin
+		}
+		if err := l.svcCtx.OrderLogModel.InsertOrderLog(ctx, session, model.NewOrderLog{
+			OrderID:      in.Id,
+			FromStatus:   lock.Status,
+			ToStatus:     orderStatusCanceled,
+			OperatorType: operatorType,
+			OperatorID:   userID,
+			Remark:       reason,
+		}); err != nil {
+			return err
+		}
 
-	info, err := loadOrder(l.ctx, tx, in.Id, userID, admin)
-	if err != nil {
-		l.Errorf("query canceled order failed: %v", err)
+		info, err := loadOrderInfo(ctx, l.svcCtx, session, in.Id, userID, admin)
+		if err != nil {
+			return err
+		}
+		resp = &order.OrderResp{Code: errcode.Success, Msg: errcode.Msg(errcode.Success), Data: info}
+		return nil
+	})
+	switch {
+	case errors.Is(err, model.ErrAbortTransaction):
+		return resp, nil
+	case err != nil:
+		l.Errorf("cancel order failed: %v", err)
 		return nil, err
 	}
-	if err := tx.Commit(); err != nil {
-		l.Errorf("commit cancel transaction failed: %v", err)
-		return nil, err
-	}
-	return &order.OrderResp{Code: errcode.Success, Msg: errcode.Msg(errcode.Success), Data: info}, nil
+	return resp, nil
 }

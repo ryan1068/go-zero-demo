@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"net/http"
 
 	"go-zero-demo/order-rpc/internal/config"
 	"go-zero-demo/order-rpc/internal/logic"
@@ -25,15 +23,10 @@ func main() {
 	flag.Parse()
 
 	var c config.Config
-	conf.MustLoad(*configFile, &c)
-	// 启动Prometheus metrics服务
-	go func() {
-		http.Handle("/metrics", promhttp.Handler())
-		http.ListenAndServe(":9102", nil) // 暴露metrics端口
-	}()
+	conf.MustLoad(*configFile, &c, conf.UseEnv())
 
 	ctx := svc.NewServiceContext(c)
-	logic.StartTimeoutJob(ctx.DB)
+	logic.StartTimeoutJob(ctx)
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		order.RegisterOrderServer(grpcServer, server.NewOrderServer(ctx))

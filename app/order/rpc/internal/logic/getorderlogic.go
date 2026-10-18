@@ -2,7 +2,6 @@ package logic
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 
 	"go-zero-demo/order-rpc/internal/svc"
@@ -11,6 +10,7 @@ import (
 	"go-zero-demo/pkg/errcode"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
 type GetOrderLogic struct {
@@ -32,13 +32,19 @@ func (l *GetOrderLogic) GetOrder(in *order.GetOrderReq) (*order.OrderResp, error
 		return &order.OrderResp{Code: errcode.BadRequest, Msg: errcode.Msg(errcode.BadRequest)}, nil
 	}
 
-	info, err := loadOrder(l.ctx, l.svcCtx.DB, in.Id, userID, in.Admin == 1)
+	row, err := l.svcCtx.OrdersModel.FindOrder(l.ctx, nil, in.Id, userID, in.Admin == 1)
 	switch {
-	case errors.Is(err, sql.ErrNoRows):
+	case errors.Is(err, sqlx.ErrNotFound):
 		return &order.OrderResp{Code: errcode.NotFound, Msg: errcode.Msg(errcode.NotFound)}, nil
 	case err != nil:
 		l.Errorf("query order failed: %v", err)
 		return nil, err
 	}
-	return &order.OrderResp{Code: errcode.Success, Msg: errcode.Msg(errcode.Success), Data: info}, nil
+
+	items, err := l.svcCtx.OrderItemModel.FindOrderItems(l.ctx, nil, in.Id)
+	if err != nil {
+		l.Errorf("query order items failed: %v", err)
+		return nil, err
+	}
+	return &order.OrderResp{Code: errcode.Success, Msg: errcode.Msg(errcode.Success), Data: toOrderInfo(row, items)}, nil
 }

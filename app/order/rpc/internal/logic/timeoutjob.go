@@ -2,11 +2,14 @@ package logic
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"time"
 
+	"go-zero-demo/order-rpc/internal/model"
+	"go-zero-demo/order-rpc/internal/svc"
+
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
 const (
@@ -19,156 +22,120 @@ const (
 
 // StartTimeoutJob periodically cancels unpaid orders that have exceeded the
 // payment window, restores their stock, and auto-confirms shipped orders.
-func StartTimeoutJob(db *sql.DB) {
+func StartTimeoutJob(svcCtx *svc.ServiceContext) {
 	go func() {
 		ticker := time.NewTicker(timeoutScanInterval)
 		defer ticker.Stop()
 		for range ticker.C {
-			if err := cancelExpiredOrders(db); err != nil {
+			if err := cancelExpiredOrders(svcCtx); err != nil {
 				logx.Errorf("cancel expired orders failed: %v", err)
 			}
-			if err := completeExpiredShippedOrders(db); err != nil {
+			if err := completeExpiredShippedOrders(svcCtx); err != nil {
 				logx.Errorf("auto confirm shipped orders failed: %v", err)
 			}
 		}
 	}()
 }
 
-func cancelExpiredOrders(db *sql.DB) error {
+func cancelExpiredOrders(svcCtx *svc.ServiceContext) error {
 	ctx := context.Background()
-	rows, err := db.QueryContext(ctx,
-		"SELECT id FROM orders WHERE status = ? AND deleted_at IS NULL AND created_at < DATE_SUB(NOW(), INTERVAL ? MINUTE) ORDER BY id LIMIT ?",
-		orderStatusPendingPayment, timeoutOrderMinutes, timeoutBatchSize,
-	)
+	ids, err := svcCtx.OrdersModel.FindExpiredPendingOrderIDs(ctx, nil,
+		orderStatusPendingPayment, timeoutOrderMinutes, timeoutBatchSize)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if closeErr := rows.Close(); closeErr != nil {
-			logx.Errorf("close expired order rows failed: %v", closeErr)
-		}
-	}()
-
-	ids := make([]int64, 0, timeoutBatchSize)
-	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
-			return err
-		}
-		ids = append(ids, id)
-	}
-	if err := rows.Err(); err != nil {
-		return err
-	}
 	for _, id := range ids {
-		if err := cancelExpiredOrder(ctx, db, id); err != nil {
+		if err := cancelExpiredOrder(ctx, svcCtx, id); err != nil {
 			logx.Errorf("cancel expired order %d failed: %v", id, err)
 		}
 	}
 	return nil
 }
 
-func cancelExpiredOrder(ctx context.Context, db *sql.DB, id int64) error {
-	logger := logx.WithContext(ctx)
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer rollbackTx(logger, tx)
-
-	var status int32
-	err = tx.QueryRowContext(ctx,
-		"SELECT status FROM orders WHERE id = ? AND deleted_at IS NULL FOR UPDATE", id,
-	).Scan(&status)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return nil
-	case err != nil:
-		return err
-	}
-	if status != orderStatusPendingPayment {
-		return tx.Commit()
-	}
-
-	if _, err := tx.ExecContext(ctx,
-		"UPDATE orders SET status = ?, canceled_at = NOW(), cancel_reason = ? WHERE id = ?",
-		orderStatusCanceled, "超时未支付", id,
-	); err != nil {
-		return err
-	}
-	if err := restoreStock(ctx, tx, id); err != nil {
-		return err
-	}
-	if err := writeOrderLog(ctx, tx, id, orderStatusPendingPayment, orderStatusCanceled, operatorSystem, 0, "超时未支付"); err != nil {
-		return err
-	}
-	return tx.Commit()
-}
-
-func completeExpiredShippedOrders(db *sql.DB) error {
-	ctx := context.Background()
-	rows, err := db.QueryContext(ctx,
-		"SELECT id FROM orders WHERE status = ? AND deleted_at IS NULL AND shipped_at IS NOT NULL AND shipped_at < DATE_SUB(NOW(), INTERVAL ? DAY) ORDER BY id LIMIT ?",
-		orderStatusShipped, autoConfirmDays, autoConfirmBatchSize,
-	)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if closeErr := rows.Close(); closeErr != nil {
-			logx.Errorf("close auto confirm order rows failed: %v", closeErr)
+func cancelExpiredOrder(ctx context.Context, svcCtx *svc.ServiceContext, id int64) error {
+	err := svcCtx.DB.TransactCtx(ctx, func(ctx context.Context, session sqlx.Session) error {
+		lock, err := svcCtx.OrdersModel.LockOrder(ctx, session, id, nil)
+		if errors.Is(err, sqlx.ErrNotFound) {
+			return model.ErrAbortTransaction
 		}
-	}()
-
-	ids := make([]int64, 0, autoConfirmBatchSize)
-	for rows.Next() {
-		var id int64
-		if err := rows.Scan(&id); err != nil {
+		if err != nil {
 			return err
 		}
-		ids = append(ids, id)
+		if lock.Status != orderStatusPendingPayment {
+			// Preserve the original behavior: wrong status commits a no-op.
+			return nil
+		}
+
+		if _, err := svcCtx.OrdersModel.UpdateOrderCanceled(ctx, session, id, orderStatusCanceled, "超时未支付"); err != nil {
+			return err
+		}
+		lines, err := svcCtx.OrderItemModel.StockLines(ctx, session, id)
+		if err != nil {
+			return err
+		}
+		for _, line := range lines {
+			if err := svcCtx.ProductModel.RestoreStock(ctx, session, line.ProductId, line.Quantity); err != nil {
+				return err
+			}
+		}
+		return svcCtx.OrderLogModel.InsertOrderLog(ctx, session, model.NewOrderLog{
+			OrderID:      id,
+			FromStatus:   orderStatusPendingPayment,
+			ToStatus:     orderStatusCanceled,
+			OperatorType: operatorSystem,
+			OperatorID:   0,
+			Remark:       "超时未支付",
+		})
+	})
+	if errors.Is(err, model.ErrAbortTransaction) {
+		return nil
 	}
-	if err := rows.Err(); err != nil {
+	return err
+}
+
+func completeExpiredShippedOrders(svcCtx *svc.ServiceContext) error {
+	ctx := context.Background()
+	ids, err := svcCtx.OrdersModel.FindExpiredShippedOrderIDs(ctx, nil,
+		orderStatusShipped, autoConfirmDays, autoConfirmBatchSize)
+	if err != nil {
 		return err
 	}
 	for _, id := range ids {
-		if err := completeExpiredShippedOrder(ctx, db, id); err != nil {
+		if err := completeExpiredShippedOrder(ctx, svcCtx, id); err != nil {
 			logx.Errorf("auto confirm order %d failed: %v", id, err)
 		}
 	}
 	return nil
 }
 
-func completeExpiredShippedOrder(ctx context.Context, db *sql.DB, id int64) error {
-	logger := logx.WithContext(ctx)
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer rollbackTx(logger, tx)
+func completeExpiredShippedOrder(ctx context.Context, svcCtx *svc.ServiceContext, id int64) error {
+	err := svcCtx.DB.TransactCtx(ctx, func(ctx context.Context, session sqlx.Session) error {
+		lock, err := svcCtx.OrdersModel.LockOrder(ctx, session, id, nil)
+		if errors.Is(err, sqlx.ErrNotFound) {
+			return model.ErrAbortTransaction
+		}
+		if err != nil {
+			return err
+		}
+		if lock.Status != orderStatusShipped {
+			// Preserve the original behavior: wrong status commits a no-op.
+			return nil
+		}
 
-	var status int32
-	err = tx.QueryRowContext(ctx,
-		"SELECT status FROM orders WHERE id = ? AND deleted_at IS NULL FOR UPDATE", id,
-	).Scan(&status)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
+		if _, err := svcCtx.OrdersModel.UpdateOrderCompletedByStatus(ctx, session, id, orderStatusShipped, orderStatusCompleted); err != nil {
+			return err
+		}
+		return svcCtx.OrderLogModel.InsertOrderLog(ctx, session, model.NewOrderLog{
+			OrderID:      id,
+			FromStatus:   orderStatusShipped,
+			ToStatus:     orderStatusCompleted,
+			OperatorType: operatorSystem,
+			OperatorID:   0,
+			Remark:       "超时自动确认收货",
+		})
+	})
+	if errors.Is(err, model.ErrAbortTransaction) {
 		return nil
-	case err != nil:
-		return err
 	}
-	if status != orderStatusShipped {
-		return tx.Commit()
-	}
-
-	if _, err := tx.ExecContext(ctx,
-		"UPDATE orders SET status = ?, completed_at = NOW() WHERE id = ? AND status = ?",
-		orderStatusCompleted, id, orderStatusShipped,
-	); err != nil {
-		return err
-	}
-	if err := writeOrderLog(ctx, tx, id, orderStatusShipped, orderStatusCompleted, operatorSystem, 0, "超时自动确认收货"); err != nil {
-		return err
-	}
-	return tx.Commit()
+	return err
 }

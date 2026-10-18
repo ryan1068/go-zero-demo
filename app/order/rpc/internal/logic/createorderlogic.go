@@ -2,7 +2,6 @@ package logic
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -10,12 +9,14 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"go-zero-demo/order-rpc/internal/model"
 	"go-zero-demo/order-rpc/internal/svc"
 	"go-zero-demo/order-rpc/pb/order"
 	"go-zero-demo/pkg/auth"
 	"go-zero-demo/pkg/errcode"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
 const stockLockTTL = 10
@@ -70,30 +71,6 @@ func (l *CreateOrderLogic) lockProductStock(productID int64) func() {
 	}
 }
 
-type orderItemInput struct {
-	productID int64
-	quantity  int32
-}
-
-type orderItemSnapshot struct {
-	productID int64
-	name      string
-	cover     string
-	price     int64
-	quantity  int32
-	amount    int64
-}
-
-type receiverSnapshot struct {
-	name     string
-	phone    string
-	province string
-	city     string
-	district string
-	address  string
-	postal   string
-}
-
 func (l *CreateOrderLogic) CreateOrder(in *order.CreateOrderReq) (*order.OrderResp, error) {
 	userID, ok := auth.UserIDFromIncoming(l.ctx)
 	if !ok {
@@ -112,172 +89,141 @@ func (l *CreateOrderLogic) CreateOrder(in *order.CreateOrderReq) (*order.OrderRe
 		}
 	}
 
-	tx, err := l.svcCtx.DB.BeginTx(l.ctx, nil)
-	if err != nil {
-		l.Errorf("begin order transaction failed: %v", err)
-		return nil, err
-	}
-	defer rollbackTx(l.Logger, tx)
-
-	receiver, err := l.loadReceiver(l.ctx, tx, in.AddressId, userID)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return &order.OrderResp{Code: errcode.BadRequest, Msg: "收货地址不存在"}, nil
-	case err != nil:
-		l.Errorf("query receiver address failed: %v", err)
-		return nil, err
-	}
-
-	inputs, err := l.orderInputs(l.ctx, tx, userID, in)
-	if err != nil {
-		return nil, err
-	}
-	if len(inputs) == 0 {
-		return &order.OrderResp{Code: errcode.BadRequest, Msg: "请选择要购买的商品"}, nil
-	}
-
-	items := make([]orderItemSnapshot, 0, len(inputs))
-	var totalAmount int64
-	for _, input := range inputs {
-		var snap orderItemSnapshot
-		var status int32
-		var stock int32
-		unlock := l.lockProductStock(input.productID)
-		defer unlock()
-		err := tx.QueryRowContext(l.ctx,
-			"SELECT name, COALESCE(cover_image, ''), price, stock, status FROM looklook_product.product WHERE id = ? AND deleted_at IS NULL FOR UPDATE",
-			input.productID,
-		).Scan(&snap.name, &snap.cover, &snap.price, &stock, &status)
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			return &order.OrderResp{Code: errcode.NotFound, Msg: "商品不存在"}, nil
-		case err != nil:
-			l.Errorf("query product failed: %v", err)
-			return nil, err
-		}
-		if status != 1 {
-			return &order.OrderResp{Code: errcode.BadRequest, Msg: "商品已下架"}, nil
-		}
-		if stock < input.quantity {
-			return &order.OrderResp{Code: errcode.BadRequest, Msg: "库存不足"}, nil
-		}
-
-		snap.productID = input.productID
-		snap.quantity = input.quantity
-		snap.amount = snap.price * int64(input.quantity)
-		totalAmount += snap.amount
-		items = append(items, snap)
-
-		result, err := tx.ExecContext(l.ctx,
-			"UPDATE looklook_product.product SET stock = stock - ?, sales = sales + ? WHERE id = ? AND stock >= ?",
-			input.quantity, input.quantity, input.productID, input.quantity,
-		)
-		if err != nil {
-			l.Errorf("deduct product stock failed: %v", err)
-			return nil, err
-		}
-		affected, err := result.RowsAffected()
-		if err != nil {
-			l.Errorf("read stock affected rows failed: %v", err)
-			return nil, err
-		}
-		if affected == 0 {
-			return &order.OrderResp{Code: errcode.BadRequest, Msg: "库存不足"}, nil
-		}
-	}
-
-	orderNo := generateNo("O")
-	result, err := tx.ExecContext(l.ctx,
-		"INSERT INTO orders (order_no, user_id, total_amount, freight_amount, discount_amount, pay_amount, status, pay_type, receiver_name, receiver_phone, receiver_province, receiver_city, receiver_district, receiver_address, receiver_postal_code, remark) VALUES (?, ?, ?, 0, 0, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?)",
-		orderNo, userID, totalAmount, totalAmount, orderStatusPendingPayment,
-		receiver.name, receiver.phone, receiver.province, receiver.city, receiver.district, receiver.address, receiver.postal, remark,
-	)
-	if err != nil {
-		l.Errorf("insert order failed: %v", err)
-		return nil, err
-	}
-	orderID, err := result.LastInsertId()
-	if err != nil {
-		l.Errorf("read inserted order id failed: %v", err)
-		return nil, err
-	}
-
-	for _, item := range items {
-		if _, err := tx.ExecContext(l.ctx,
-			"INSERT INTO order_item (order_id, product_id, product_name, product_cover, price, quantity, total_amount) VALUES (?, ?, ?, ?, ?, ?, ?)",
-			orderID, item.productID, item.name, item.cover, item.price, item.quantity, item.amount,
-		); err != nil {
-			l.Errorf("insert order item failed: %v", err)
-			return nil, err
-		}
-	}
-
-	if in.BuyNow == 0 {
-		if _, err := tx.ExecContext(l.ctx,
-			"DELETE FROM cart_item WHERE user_id = ? AND selected = 1", userID,
-		); err != nil {
-			l.Errorf("delete selected cart items failed: %v", err)
-			return nil, err
-		}
-	}
-
-	if err := writeOrderLog(l.ctx, tx, orderID, 0, orderStatusPendingPayment, operatorUser, userID, "创建订单"); err != nil {
-		l.Errorf("write order log failed: %v", err)
-		return nil, err
-	}
-
-	info, err := loadOrder(l.ctx, tx, orderID, userID, false)
-	if err != nil {
-		l.Errorf("query created order failed: %v", err)
-		return nil, err
-	}
-	if err := tx.Commit(); err != nil {
-		l.Errorf("commit order transaction failed: %v", err)
-		return nil, err
-	}
-
-	return &order.OrderResp{Code: errcode.Success, Msg: errcode.Msg(errcode.Success), Data: info}, nil
-}
-
-func (l *CreateOrderLogic) loadReceiver(ctx context.Context, tx *sql.Tx, addressID, userID int64) (*receiverSnapshot, error) {
-	receiver := new(receiverSnapshot)
-	err := tx.QueryRowContext(ctx,
-		"SELECT receiver_name, receiver_phone, COALESCE(province, ''), COALESCE(city, ''), COALESCE(district, ''), detail_address, COALESCE(postal_code, '') FROM looklook_usercenter.user_address WHERE id = ? AND user_id = ? AND deleted_at IS NULL",
-		addressID, userID,
-	).Scan(&receiver.name, &receiver.phone, &receiver.province, &receiver.city, &receiver.district, &receiver.address, &receiver.postal)
-	if err != nil {
-		return nil, err
-	}
-	return receiver, nil
-}
-
-func (l *CreateOrderLogic) orderInputs(ctx context.Context, tx *sql.Tx, userID int64, in *order.CreateOrderReq) ([]orderItemInput, error) {
-	if in.BuyNow == 1 {
-		return []orderItemInput{{productID: in.ProductId, quantity: in.Quantity}}, nil
-	}
-
-	rows, err := tx.QueryContext(ctx,
-		"SELECT product_id, quantity FROM cart_item WHERE user_id = ? AND selected = 1 FOR UPDATE", userID,
-	)
-	if err != nil {
-		l.Errorf("query selected cart items failed: %v", err)
-		return nil, err
-	}
+	var resp *order.OrderResp
+	unlocks := make([]func(), 0, 4)
 	defer func() {
-		_ = rows.Close()
+		for i := len(unlocks) - 1; i >= 0; i-- {
+			unlocks[i]()
+		}
 	}()
 
-	inputs := make([]orderItemInput, 0, 4)
-	for rows.Next() {
-		var input orderItemInput
-		if err := rows.Scan(&input.productID, &input.quantity); err != nil {
-			l.Errorf("scan selected cart item failed: %v", err)
-			return nil, err
+	err := l.svcCtx.DB.TransactCtx(l.ctx, func(ctx context.Context, session sqlx.Session) error {
+		receiver, err := l.svcCtx.UserAddressModel.FindReceiver(ctx, session, in.AddressId, userID)
+		if errors.Is(err, sqlx.ErrNotFound) {
+			resp = &order.OrderResp{Code: errcode.BadRequest, Msg: "收货地址不存在"}
+			return model.ErrAbortTransaction
 		}
-		inputs = append(inputs, input)
+		if err != nil {
+			return err
+		}
+
+		inputs, err := l.orderInputs(ctx, session, userID, in)
+		if err != nil {
+			return err
+		}
+		if len(inputs) == 0 {
+			resp = &order.OrderResp{Code: errcode.BadRequest, Msg: "请选择要购买的商品"}
+			return model.ErrAbortTransaction
+		}
+
+		items := make([]model.NewOrderItem, 0, len(inputs))
+		var totalAmount int64
+		for _, input := range inputs {
+			unlocks = append(unlocks, l.lockProductStock(input.ProductId))
+
+			snapshot, err := l.svcCtx.ProductModel.FindForUpdate(ctx, session, input.ProductId)
+			if errors.Is(err, sqlx.ErrNotFound) {
+				resp = &order.OrderResp{Code: errcode.NotFound, Msg: "商品不存在"}
+				return model.ErrAbortTransaction
+			}
+			if err != nil {
+				return err
+			}
+			if snapshot.Status != 1 {
+				resp = &order.OrderResp{Code: errcode.BadRequest, Msg: "商品已下架"}
+				return model.ErrAbortTransaction
+			}
+			if snapshot.Stock < input.Quantity {
+				resp = &order.OrderResp{Code: errcode.BadRequest, Msg: "库存不足"}
+				return model.ErrAbortTransaction
+			}
+
+			amount := snapshot.Price * input.Quantity
+			totalAmount += amount
+			items = append(items, model.NewOrderItem{
+				ProductID:    input.ProductId,
+				ProductName:  snapshot.Name,
+				ProductCover: snapshot.Cover,
+				Price:        snapshot.Price,
+				Quantity:     input.Quantity,
+				TotalAmount:  amount,
+			})
+
+			affected, err := l.svcCtx.ProductModel.DeductStock(ctx, session, input.ProductId, input.Quantity)
+			if err != nil {
+				return err
+			}
+			if affected == 0 {
+				resp = &order.OrderResp{Code: errcode.BadRequest, Msg: "库存不足"}
+				return model.ErrAbortTransaction
+			}
+		}
+
+		orderID, err := l.svcCtx.OrdersModel.InsertOrder(ctx, session, model.NewOrder{
+			OrderNo:            generateNo("O"),
+			UserID:             userID,
+			TotalAmount:        totalAmount,
+			PayAmount:          totalAmount,
+			Status:             orderStatusPendingPayment,
+			ReceiverName:       receiver.Name,
+			ReceiverPhone:      receiver.Phone,
+			ReceiverProvince:   receiver.Province,
+			ReceiverCity:       receiver.City,
+			ReceiverDistrict:   receiver.District,
+			ReceiverAddress:    receiver.Address,
+			ReceiverPostalCode: receiver.Postal,
+			Remark:             remark,
+		})
+		if err != nil {
+			return err
+		}
+		if err := l.svcCtx.OrderItemModel.InsertOrderItems(ctx, session, orderID, items); err != nil {
+			return err
+		}
+		if in.BuyNow == 0 {
+			if err := l.svcCtx.CartItemModel.DeleteSelectedCartItems(ctx, session, userID); err != nil {
+				return err
+			}
+		}
+		if err := l.svcCtx.OrderLogModel.InsertOrderLog(ctx, session, model.NewOrderLog{
+			OrderID:      orderID,
+			FromStatus:   0,
+			ToStatus:     orderStatusPendingPayment,
+			OperatorType: operatorUser,
+			OperatorID:   userID,
+			Remark:       "创建订单",
+		}); err != nil {
+			return err
+		}
+
+		row, err := l.svcCtx.OrdersModel.FindOrder(ctx, session, orderID, userID, false)
+		if err != nil {
+			return err
+		}
+		orderItems, err := l.svcCtx.OrderItemModel.FindOrderItems(ctx, session, orderID)
+		if err != nil {
+			return err
+		}
+		resp = &order.OrderResp{Code: errcode.Success, Msg: errcode.Msg(errcode.Success), Data: toOrderInfo(row, orderItems)}
+		return nil
+	})
+	switch {
+	case errors.Is(err, model.ErrAbortTransaction):
+		return resp, nil
+	case err != nil:
+		l.Errorf("create order failed: %v", err)
+		return nil, err
 	}
-	if err := rows.Err(); err != nil {
-		l.Errorf("iterate selected cart items failed: %v", err)
+	return resp, nil
+}
+
+func (l *CreateOrderLogic) orderInputs(ctx context.Context, session sqlx.Session, userID int64, in *order.CreateOrderReq) ([]*model.CartSelection, error) {
+	if in.BuyNow == 1 {
+		return []*model.CartSelection{{ProductId: in.ProductId, Quantity: int64(in.Quantity)}}, nil
+	}
+	inputs, err := l.svcCtx.CartItemModel.FindSelectedForUpdate(ctx, session, userID)
+	if err != nil {
+		l.Errorf("query selected cart items failed: %v", err)
 		return nil, err
 	}
 	return inputs, nil

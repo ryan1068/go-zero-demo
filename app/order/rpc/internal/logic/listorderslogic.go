@@ -2,10 +2,10 @@ package logic
 
 import (
 	"context"
-	"strconv"
 	"strings"
 	"unicode/utf8"
 
+	"go-zero-demo/order-rpc/internal/model"
 	"go-zero-demo/order-rpc/internal/svc"
 	"go-zero-demo/order-rpc/pb/order"
 	"go-zero-demo/pkg/auth"
@@ -51,77 +51,46 @@ func (l *ListOrdersLogic) ListOrders(in *order.ListOrdersReq) (*order.OrderListR
 	}
 
 	admin := in.Admin == 1
-	where := []string{"deleted_at IS NULL"}
-	args := make([]any, 0, 6)
-	if !admin {
-		where = append(where, "user_id = ?")
-		args = append(args, userID)
-	} else if in.UserId > 0 {
-		where = append(where, "user_id = ?")
-		args = append(args, in.UserId)
+	filter := model.OrderFilter{
+		Admin:     admin,
+		UserID:    userID,
+		OrderNo:   orderNo,
+		Status:    int64(in.Status),
+		StartTime: in.StartTime,
+		EndTime:   in.EndTime,
+		Page:      int64(page),
+		PageSize:  int64(pageSize),
+		MaxRows:   maxOrderCount,
 	}
-	if orderNo != "" {
-		where = append(where, "order_no = ?")
-		args = append(args, orderNo)
+	if admin && in.UserId > 0 {
+		filter.UserID = in.UserId
 	}
-	if in.Status > 0 {
-		where = append(where, "status = ?")
-		args = append(args, in.Status)
-	}
-	if in.StartTime > 0 {
-		where = append(where, "created_at >= FROM_UNIXTIME(?)")
-		args = append(args, in.StartTime)
-	}
-	if in.EndTime > 0 {
-		where = append(where, "created_at <= FROM_UNIXTIME(?)")
-		args = append(args, in.EndTime)
-	}
-	condition := strings.Join(where, " AND ")
 
-	var total int64
-	countQuery := "SELECT COUNT(*) FROM (SELECT 1 FROM orders WHERE " + condition +
-		" LIMIT " + strconv.Itoa(maxOrderCount) + ") AS filtered"
-	if err := l.svcCtx.DB.QueryRowContext(l.ctx, countQuery, args...).Scan(&total); err != nil {
+	total, err := l.svcCtx.OrdersModel.CountOrders(l.ctx, nil, filter)
+	if err != nil {
 		l.Errorf("count orders failed: %v", err)
 		return nil, err
 	}
 
-	offset := int64(page-1) * int64(pageSize)
-	listArgs := append(append([]any{}, args...), int64(pageSize), offset)
-	rows, err := l.svcCtx.DB.QueryContext(l.ctx,
-		"SELECT "+orderSelectColumns+" FROM orders WHERE "+condition+" ORDER BY id DESC LIMIT ? OFFSET ?",
-		listArgs...,
-	)
+	rows, err := l.svcCtx.OrdersModel.ListOrders(l.ctx, nil, filter)
 	if err != nil {
 		l.Errorf("query orders failed: %v", err)
 		return nil, err
 	}
-	defer func() {
-		if closeErr := rows.Close(); closeErr != nil {
-			l.Errorf("close order rows failed: %v", closeErr)
-		}
-	}()
 
-	list := make([]*order.OrderInfo, 0, pageSize)
-	for rows.Next() {
-		info, err := scanOrderHeader(rows)
-		if err != nil {
-			l.Errorf("scan order failed: %v", err)
-			return nil, err
-		}
-		list = append(list, info)
+	ids := make([]int64, 0, len(rows))
+	for _, row := range rows {
+		ids = append(ids, row.Id)
 	}
-	if err := rows.Err(); err != nil {
-		l.Errorf("iterate orders failed: %v", err)
+	itemsByOrder, err := l.svcCtx.OrderItemModel.FindOrderItemsByOrderIDs(l.ctx, nil, ids)
+	if err != nil {
+		l.Errorf("query order items failed: %v", err)
 		return nil, err
 	}
-	for _, info := range list {
-		items, err := loadOrderItems(l.ctx, l.svcCtx.DB, info.Id)
-		if err != nil {
-			l.Errorf("query order items failed: %v", err)
-			return nil, err
-		}
-		info.Items = items
+
+	list := make([]*order.OrderInfo, 0, len(rows))
+	for _, row := range rows {
+		list = append(list, toOrderInfo(row, itemsByOrder[row.Id]))
 	}
 
 	return &order.OrderListResp{

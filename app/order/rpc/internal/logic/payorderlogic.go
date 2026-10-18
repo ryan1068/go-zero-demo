@@ -2,15 +2,16 @@ package logic
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 
+	"go-zero-demo/order-rpc/internal/model"
 	"go-zero-demo/order-rpc/internal/svc"
 	"go-zero-demo/order-rpc/pb/order"
 	"go-zero-demo/pkg/auth"
 	"go-zero-demo/pkg/errcode"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 
 type PayOrderLogic struct {
@@ -32,79 +33,81 @@ func (l *PayOrderLogic) PayOrder(in *order.PayOrderReq) (*order.OrderResp, error
 		return &order.OrderResp{Code: errcode.BadRequest, Msg: errcode.Msg(errcode.BadRequest)}, nil
 	}
 
-	tx, err := l.svcCtx.DB.BeginTx(l.ctx, nil)
-	if err != nil {
-		l.Errorf("begin payment transaction failed: %v", err)
-		return nil, err
-	}
-	defer rollbackTx(l.Logger, tx)
-
-	var (
-		status    int32
-		orderNo   string
-		payAmount int64
-	)
-	err = tx.QueryRowContext(l.ctx,
-		"SELECT status, order_no, pay_amount FROM orders WHERE id = ? AND user_id = ? AND deleted_at IS NULL FOR UPDATE",
-		in.Id, userID,
-	).Scan(&status, &orderNo, &payAmount)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		return &order.OrderResp{Code: errcode.NotFound, Msg: errcode.Msg(errcode.NotFound)}, nil
-	case err != nil:
-		l.Errorf("query order failed: %v", err)
-		return nil, err
-	}
-
-	switch status {
-	case orderStatusPendingShipment, orderStatusShipped, orderStatusCompleted:
-		info, err := loadOrder(l.ctx, tx, in.Id, userID, false)
+	var resp *order.OrderResp
+	err := l.svcCtx.DB.TransactCtx(l.ctx, func(ctx context.Context, session sqlx.Session) error {
+		lock, err := l.svcCtx.OrdersModel.LockOrder(ctx, session, in.Id, &userID)
+		if errors.Is(err, sqlx.ErrNotFound) {
+			resp = &order.OrderResp{Code: errcode.NotFound, Msg: errcode.Msg(errcode.NotFound)}
+			return model.ErrAbortTransaction
+		}
 		if err != nil {
-			l.Errorf("query paid order failed: %v", err)
-			return nil, err
+			return err
 		}
-		if err := tx.Commit(); err != nil {
-			l.Errorf("commit payment transaction failed: %v", err)
-			return nil, err
+
+		switch lock.Status {
+		case orderStatusPendingShipment, orderStatusShipped, orderStatusCompleted:
+			info, err := loadOrderInfo(ctx, l.svcCtx, session, in.Id, userID, false)
+			if err != nil {
+				return err
+			}
+			resp = &order.OrderResp{Code: errcode.Success, Msg: errcode.Msg(errcode.Success), Data: info}
+			return nil
+		case orderStatusCanceled:
+			resp = &order.OrderResp{Code: errcode.BadRequest, Msg: "订单已取消"}
+			return model.ErrAbortTransaction
+		case orderStatusPendingPayment:
+			// Continue below.
+		default:
+			resp = &order.OrderResp{Code: errcode.BadRequest, Msg: errcode.Msg(errcode.BadRequest)}
+			return model.ErrAbortTransaction
 		}
-		return &order.OrderResp{Code: errcode.Success, Msg: errcode.Msg(errcode.Success), Data: info}, nil
-	case orderStatusCanceled:
-		return &order.OrderResp{Code: errcode.BadRequest, Msg: "订单已取消"}, nil
-	case orderStatusPendingPayment:
-		// Continue below.
-	default:
-		return &order.OrderResp{Code: errcode.BadRequest, Msg: errcode.Msg(errcode.BadRequest)}, nil
-	}
 
-	paymentNo := generateNo("P")
-	transactionID := "MOCK-" + generateNo("")
-	if _, err := tx.ExecContext(l.ctx,
-		"UPDATE orders SET status = ?, pay_type = ?, transaction_id = ?, paid_at = NOW() WHERE id = ? AND user_id = ? AND status = ?",
-		orderStatusPendingShipment, payTypeMock, transactionID, in.Id, userID, orderStatusPendingPayment,
-	); err != nil {
-		l.Errorf("update order payment status failed: %v", err)
-		return nil, err
-	}
-	if _, err := tx.ExecContext(l.ctx,
-		"INSERT INTO payment_record (payment_no, order_id, order_no, user_id, amount, pay_type, status, transaction_id, paid_at) VALUES (?, ?, ?, ?, ?, ?, 1, ?, NOW())",
-		paymentNo, in.Id, orderNo, userID, payAmount, payTypeMock, transactionID,
-	); err != nil {
-		l.Errorf("insert payment record failed: %v", err)
-		return nil, err
-	}
-	if err := writeOrderLog(l.ctx, tx, in.Id, orderStatusPendingPayment, orderStatusPendingShipment, operatorUser, userID, "模拟支付成功"); err != nil {
-		l.Errorf("write order log failed: %v", err)
-		return nil, err
-	}
+		transactionID := "MOCK-" + generateNo("")
+		affected, err := l.svcCtx.OrdersModel.UpdateOrderPaid(ctx, session, in.Id, userID,
+			orderStatusPendingPayment, orderStatusPendingShipment, payTypeMock, transactionID)
+		if err != nil {
+			return err
+		}
+		if affected == 0 {
+			resp = &order.OrderResp{Code: errcode.BadRequest, Msg: errcode.Msg(errcode.BadRequest)}
+			return model.ErrAbortTransaction
+		}
+		if err := l.svcCtx.PaymentRecordModel.InsertPaymentRecord(ctx, session, model.NewPaymentRecord{
+			PaymentNo:     generateNo("P"),
+			OrderID:       in.Id,
+			OrderNo:       lock.OrderNo,
+			UserID:        userID,
+			Amount:        lock.PayAmount,
+			PayType:       payTypeMock,
+			Status:        1,
+			TransactionID: transactionID,
+		}); err != nil {
+			return err
+		}
+		if err := l.svcCtx.OrderLogModel.InsertOrderLog(ctx, session, model.NewOrderLog{
+			OrderID:      in.Id,
+			FromStatus:   orderStatusPendingPayment,
+			ToStatus:     orderStatusPendingShipment,
+			OperatorType: operatorUser,
+			OperatorID:   userID,
+			Remark:       "模拟支付成功",
+		}); err != nil {
+			return err
+		}
 
-	info, err := loadOrder(l.ctx, tx, in.Id, userID, false)
-	if err != nil {
-		l.Errorf("query paid order failed: %v", err)
+		info, err := loadOrderInfo(ctx, l.svcCtx, session, in.Id, userID, false)
+		if err != nil {
+			return err
+		}
+		resp = &order.OrderResp{Code: errcode.Success, Msg: errcode.Msg(errcode.Success), Data: info}
+		return nil
+	})
+	switch {
+	case errors.Is(err, model.ErrAbortTransaction):
+		return resp, nil
+	case err != nil:
+		l.Errorf("pay order failed: %v", err)
 		return nil, err
 	}
-	if err := tx.Commit(); err != nil {
-		l.Errorf("commit payment transaction failed: %v", err)
-		return nil, err
-	}
-	return &order.OrderResp{Code: errcode.Success, Msg: errcode.Msg(errcode.Success), Data: info}, nil
+	return resp, nil
 }
