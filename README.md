@@ -59,29 +59,29 @@
 - 重新生成：
 
 ```bash
-export MYSQL_ROOT_PASSWORD='<mysql root 密码>'
+export MYSQL_ROOT_PASSWORD="$(grep '^MYSQL_ROOT_PASSWORD=' .env | cut -d= -f2-)"
 make gen-model
 ```
 
 ## 快速开始
 
 ```bash
-# 1. 准备环境变量（JWT_SECRET 至少 32 个字符）
+# 1. 准备环境变量（复制后设置 JWT_SECRET、MYSQL_ROOT_PASSWORD、REDIS_PASSWORD）
 cp .env.example .env
 
 # 2. 启动所有服务
 docker compose up -d --build
 
 # 3. 已有 MySQL 数据卷时，依次执行迁移（只需执行一次）
-#    先把 docker-compose.yml 中 mysql 服务的 root 密码导出为环境变量
-export MYSQL_ROOT_PASSWORD='<docker-compose.yml 中 mysql 的 root 密码>'
+#    密码从 .env 读取；已有数据卷必须保持原来的 root 密码
+export MYSQL_ROOT_PASSWORD="$(grep '^MYSQL_ROOT_PASSWORD=' .env | cut -d= -f2-)"
 for f in deploy/sql/migrations/20261018_*.sql; do
   docker exec -i mysql mysql -uroot --default-character-set=utf8mb4 -p"$MYSQL_ROOT_PASSWORD" < "$f"
 done
 ```
 
 > 全新的 MySQL 数据卷会自动执行 `init_user.sql`、`init_order.sql`、`init_product.sql`。
-> 已有数据卷不会重复执行初始化 SQL，需要手动跑迁移。
+> 已有数据卷不会重复执行初始化 SQL，需要手动跑迁移；`MYSQL_ROOT_PASSWORD` 只在首次初始化时生效，已有数据卷请沿用原密码。
 >
 > 前端 nginx 已使用 Docker 内置 DNS（`resolver 127.0.0.11`），后端容器重建后不需要再重启 frontend。
 

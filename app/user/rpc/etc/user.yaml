@@ -6,7 +6,7 @@ Etcd:
     - etcd:2379
   Key: user.rpc
 Mysql:
-  DataSource: root:PXDN93VRKUm8TeE7@tcp(mysql:3306)/looklook_usercenter?charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=true&loc=Asia%2FShanghai
+  DataSource: root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/looklook_usercenter?charset=utf8mb4&collation=utf8mb4_unicode_ci&parseTime=true&loc=Asia%2FShanghai
 Jwt:
   Secret: ${JWT_SECRET}
   ExpireHours: 24

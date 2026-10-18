@@ -1,6 +1,6 @@
 -- 商城 MVP 迁移脚本（已有数据卷执行一次）
 -- 用法：
---   docker compose exec -T mysql mysql -uroot -pPXDN93VRKUm8TeE7 < deploy/sql/migrations/20261018_mall.sql
+--   docker compose exec -T mysql mysql -uroot -p"$MYSQL_ROOT_PASSWORD" < deploy/sql/migrations/20261018_mall.sql
 --
 -- 注意：
 -- 1. 本脚本只执行一次；重复执行会因列/表已存在而报错。
