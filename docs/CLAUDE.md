@@ -1,50 +1,28 @@
 # 文档规范
 
-## API 文档
-
-- 基于 `.api` 文件自动生成
-- 接口描述写在 `.api` 文件的注释中
-- 请求/响应字段必须有说明
-
-## 架构文档
+## 文档位置
 
 ```
 docs/
-├── DEVELOPMENT_PROCESS.md      # 开发流程
-├── DEFINITION_OF_DONE.md       # 完成标准
-├── adr/                        # 架构决策记录
-├── superpowers/specs/          # 设计文档
-├── architecture.md             # 系统架构（待补）
-├── api/                        # API 接口文档（待补）
-└── changelog/                  # 变更日志
+├── DEVELOPMENT_PROCESS.md   # 开发流程
+├── adr/                     # 决策记录
+└── superpowers/             # 设计 / 计划
 ```
 
-## 变更日志
+## API 文档
 
-格式：`CHANGELOG-{YYYY-MM}.md`
-
-```markdown
-## [2026-07-07] 新增订单创建接口
-
-### 新增
-- POST /order/create 订单创建接口
-- 订单 RPC 服务
-
-### 修改
-- 无
-
-### 修复
-- 无
-```
+- `.api` 文件是接口事实来源
+- 接口描述写在 `.api` 注释中
+- 请求/响应字段必须有说明
 
 ## 代码注释
 
 - Go：公开函数/类型必须有 godoc 注释
-- Vue：复杂逻辑加注释说明
-- 注释语言：英文
+- Vue：复杂逻辑加注释
+- 注释语言与现有代码保持一致（中文）
 
 ## 禁止事项
 
-- 不要写无意义的注释（如 `// 获取用户` 对应 `func GetUser`）
-- 不要提交过期的文档
-- 不要在代码中写大段文档（放 docs/）
+- 无意义的注释（如 `// 获取用户` 对应 `func GetUser`）
+- 提交过期文档
+- 在代码中写大段文档（放 `docs/`）

@@ -6,6 +6,7 @@ ORDER_API=${ORDER_API:-http://localhost:8001}
 PRODUCT_API=${PRODUCT_API:-http://localhost:8002}
 ADMIN_USER=${ADMIN_USER:-admin}
 ADMIN_PASSWORD=${ADMIN_PASSWORD:-123456}
+PRODUCT_ID=${PRODUCT_ID:-10}
 
 fail=0
 LAST_BODY=""
@@ -77,7 +78,7 @@ check_api "product list" GET "$PRODUCT_API/products?page=1&page_size=1" 200
 products=$(jq -r '.data.total // 0' <<<"$LAST_BODY")
 
 check_api "category list" GET "$PRODUCT_API/categories" 200
-check_api "product detail" GET "$PRODUCT_API/product/10" 200
+check_api "product detail" GET "$PRODUCT_API/product/$PRODUCT_ID" 200
 check_api "search 龙井" GET "$PRODUCT_API/products?page=1&page_size=5&keyword=%E9%BE%99%E4%BA%95" 200
 check_api "suggest 龙井" GET "$PRODUCT_API/products/suggest?keyword=%E9%BE%99%E4%BA%95" 200
 

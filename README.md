@@ -246,31 +246,16 @@ deploy/
 
 ## 开发规范
 
-本项目使用 **Superpowers** 管理开发流程，**CLAUDE.md** 管理技术规范。
-
-开发流程与完成标准：
-
-- [docs/DEVELOPMENT_PROCESS.md](docs/DEVELOPMENT_PROCESS.md)
-- [docs/DEFINITION_OF_DONE.md](docs/DEFINITION_OF_DONE.md)
-- [docs/adr/](docs/adr/)
-- Claude Code 项目 skill：`.claude/skills/dev-process/`
-
-常用命令：
+- 流程：[docs/DEVELOPMENT_PROCESS.md](docs/DEVELOPMENT_PROCESS.md)
+- 执行清单：`.claude/skills/dev-process/SKILL.md`
+- 完成标准：[.github/pull_request_template.md](.github/pull_request_template.md)
+- 决策记录：[docs/adr/](docs/adr/)
 
 ```bash
-make check       # 格式检查 + 构建 + 测试 + vet
-make gen-check   # 重新生成 API 代码并确认无 diff
-make smoke       # 服务启动后的只读冒烟
-make db-backup   # 备份三个数据库到 backups/
+make check / gen-check / smoke / db-backup
 ```
 
-| 规范 | 文件 |
-|---|---|
-| 项目铁律 + Git | `CLAUDE.md` |
-| Go 后端 | `app/CLAUDE.md` |
-| Vue 前端 | `app/frontend/CLAUDE.md` |
-| 数据库 | `deploy/script/mysql/CLAUDE.md` |
-| 文档 | `docs/CLAUDE.md` |
+模块规范见 `CLAUDE.md` 的“技术规范索引”。
 
 ## 统一错误码
 

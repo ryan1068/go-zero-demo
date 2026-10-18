@@ -1,4 +1,8 @@
-.PHONY: build test test-short lint fmt fmt-check check protogen run clean gen gen-model gen-check smoke db-backup gen-user-api gen-order-api gen-product-api
+.PHONY: build test lint fmt fmt-check check protogen clean \
+	run-gateway run-user-api run-user-rpc run-order-api run-order-rpc run-product-api run-product-rpc \
+	gen-model gen-check smoke db-backup \
+	gen-user-api gen-order-api gen-product-api gen-user-rpc gen-order-rpc \
+	frontend-dev frontend-build
 
 MODULES := app/gateway app/user/api app/user/rpc app/order/api app/order/rpc app/product/api app/product/rpc pkg/auth pkg/errcode
 
@@ -18,11 +22,6 @@ test:
 		(cd $$d && go test ./... -count=1) || exit 1; \
 	done
 	@echo "all tests passed"
-
-test-short:
-	@for d in $(MODULES); do \
-		(cd $$d && go test ./... -count=1) || exit 1; \
-	done
 
 lint:
 	@for d in $(MODULES); do \
