@@ -4,15 +4,11 @@
 
 ## 完成标准
 
-- [ ] L3 已有 spec / ADR
-- [ ] 重构有 characterization tests；新功能有先红后绿的测试
-- [ ] 涉及数据库的改动有集成测试或真实环境验证
-- [ ] `make check` 通过
-- [ ] `make gen-check` 通过（改过 `.api` 或生成代码时）
-- [ ] 没有手改生成文件
+- [ ] L3 有 spec / ADR
+- [ ] 测试：重构有 characterization；新功能先红后绿；DB 改动有集成或真实环境验证
+- [ ] `make check` + `make gen-check` 通过，没有手改生成文件
 - [ ] 无密码/密钥/敏感日志；新增接口有鉴权；输入已校验
-- [ ] `make smoke` 通过
-- [ ] 写操作流程已验证，测试数据已清理
+- [ ] `make smoke` 通过；写流程已验证；测试数据已清理
 - [ ] 文档已更新，回滚方式已写明
 
 ## 风险与回滚
