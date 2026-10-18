@@ -53,7 +53,6 @@ func (l *ListOrdersLogic) ListOrders(in *order.ListOrdersReq) (*order.OrderListR
 	admin := in.Admin == 1
 	filter := model.OrderFilter{
 		Admin:     admin,
-		UserID:    userID,
 		OrderNo:   orderNo,
 		Status:    int64(in.Status),
 		StartTime: in.StartTime,
@@ -62,7 +61,9 @@ func (l *ListOrdersLogic) ListOrders(in *order.ListOrdersReq) (*order.OrderListR
 		PageSize:  int64(pageSize),
 		MaxRows:   maxOrderCount,
 	}
-	if admin && in.UserId > 0 {
+	if !admin {
+		filter.UserID = userID
+	} else if in.UserId > 0 {
 		filter.UserID = in.UserId
 	}
 
