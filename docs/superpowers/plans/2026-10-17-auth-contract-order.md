@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **状态（2026-10-18）：功能已实现。** Task 4/5/6 计划中的 logic 单测未落地，对应「写测试」与「测试通过并提交」步骤保留未勾选，作为后续测试补强 TODO。验收以 `make check`、`make gen-check`、`make smoke` 为准。
+
 **Goal:** 让登录签发可验证 JWT，所有 HTTP 接口统一 `{code,msg,data}`，订单写入 MySQL 并只允许查询自己的订单。
 
 **Architecture:** user-rpc 签发 JWT；`pkg/auth` 提供签名、HTTP 中间件和 gRPC metadata 工具；user-api/order-api/gateway 统一校验；order-api 把 user_id 注入 outgoing metadata，order-rpc 只从 incoming metadata 取用户身份并访问 `looklook_order.orders`。
@@ -42,11 +44,11 @@
   - `func UserIDFromIncoming(ctx context.Context) (int64, bool)`
   - `const MetadataUserIDKey = "gateway-user-id"`
 
-- [ ] **Step 1: 写失败测试**：签名/解析往返；过期 token；错误密钥；空/过短密钥；中间件放行 `/user/login`、拒绝缺失/非法 token、成功后 context 可读；`InjectUserID` 后 `UserIDFromIncoming` 可读。
-- [ ] **Step 2: 运行测试确认失败**：`cd pkg/auth && go test ./...`
-- [ ] **Step 3: 实现**：HS256，claims 含 `user_id/username/iat/exp`；中间件兼容 `Bearer <token>` 与裸 token；成功后覆盖 `Grpc-Metadata-User-Id` / `Grpc-Metadata-Username`，跳过路径删除这两个头；失败返回 HTTP 401 JSON。
-- [ ] **Step 4: 运行测试通过**：`cd pkg/auth && go test ./... -count=1`
-- [ ] **Step 5: 提交**：`feat(auth): 新增 JWT 与身份上下文工具`
+- [x] **Step 1: 写失败测试**：签名/解析往返；过期 token；错误密钥；空/过短密钥；中间件放行 `/user/login`、拒绝缺失/非法 token、成功后 context 可读；`InjectUserID` 后 `UserIDFromIncoming` 可读。
+- [x] **Step 2: 运行测试确认失败**：`cd pkg/auth && go test ./...`
+- [x] **Step 3: 实现**：HS256，claims 含 `user_id/username/iat/exp`；中间件兼容 `Bearer <token>` 与裸 token；成功后覆盖 `Grpc-Metadata-User-Id` / `Grpc-Metadata-Username`，跳过路径删除这两个头；失败返回 HTTP 401 JSON。
+- [x] **Step 4: 运行测试通过**：`cd pkg/auth && go test ./... -count=1`
+- [x] **Step 5: 提交**：`feat(auth): 新增 JWT 与身份上下文工具`
 
 ---
 
@@ -68,8 +70,8 @@
 - `order.OrderInfo{Id int64, GoodsId int64, GoodsName string, Price int64, Status int32, CreatedAt int64}`
 - `order.CommonResp{Code int32, Msg string, Data *OrderInfo}`
 
-- [ ] **Step 1: 修改两个 `.proto`**，按 spec 第 6 节；`CreateOrderReq` 内 `reserved 4; reserved "created_at";`
-- [ ] **Step 2: 离线生成 pb.go**（已验证可用）：
+- [x] **Step 1: 修改两个 `.proto`**，按 spec 第 6 节；`CreateOrderReq` 内 `reserved 4; reserved "created_at";`
+- [x] **Step 2: 离线生成 pb.go**（已验证可用）：
 
 ```bash
 cd app/gateway
@@ -81,9 +83,9 @@ cp /tmp/protogen-out/user.pb.go ../user/rpc/pb/user/user.pb.go
 cp /tmp/protogen-out/order.pb.go ../order/rpc/pb/order/order.pb.go
 ```
 
-- [ ] **Step 3: 手工同步 `.api` 与 `types.go`**（无 goctl，保持源码与生成结果一致）：用户/订单类型按 spec 第 6 节。
-- [ ] **Step 4: 编译**：各模块 `go build ./...`，先修掉类型引用错误。
-- [ ] **Step 5: 提交**：`feat(api): 统一用户与订单接口契约`
+- [x] **Step 3: 手工同步 `.api` 与 `types.go`**（无 goctl，保持源码与生成结果一致）：用户/订单类型按 spec 第 6 节。
+- [x] **Step 4: 编译**：各模块 `go build ./...`，先修掉类型引用错误。
+- [x] **Step 5: 提交**：`feat(api): 统一用户与订单接口契约`
 
 ---
 
@@ -100,11 +102,11 @@ cp /tmp/protogen-out/order.pb.go ../order/rpc/pb/order/order.pb.go
 - Consumes: `auth.Sign`, `auth.ValidateSecret`
 - Produces: `Login` 成功时 `LoginResp{Code:200,Token,UserId,Username}`；`User` 返回 `UserResp{Code,Msg,Data}`
 
-- [ ] **Step 1: 写失败测试**：登录成功签发可解析 token；密码错误 401；用户不存在 401；DB 错误返回 error；用户查询成功/空名 400/不存在 404。
-- [ ] **Step 2: 运行失败**：`cd app/user/rpc && go test ./internal/logic -run TestLogin -count=1`
-- [ ] **Step 3: 实现**：`sql.ErrNoRows` 与系统错误分流；bcrypt；ttl 取 `ExpireHours`（<=0 用 24）；查询 `SELECT id, username, password FROM user WHERE username = ?`；用户查询 `SELECT id, username, COALESCE(nickname,'') FROM user WHERE username = ?`。
-- [ ] **Step 4: 配置**：`Jwt.Secret: ${JWT_SECRET}`、`Jwt.ExpireHours: 24`；`conf.UseEnv()` + `auth.ValidateSecret`。
-- [ ] **Step 5: 测试通过并提交**：`feat(user): 登录签发 JWT 并实现用户查询`
+- [x] **Step 1: 写失败测试**：登录成功签发可解析 token；密码错误 401；用户不存在 401；DB 错误返回 error；用户查询成功/空名 400/不存在 404。
+- [x] **Step 2: 运行失败**：`cd app/user/rpc && go test ./internal/logic -run TestLogin -count=1`
+- [x] **Step 3: 实现**：`sql.ErrNoRows` 与系统错误分流；bcrypt；ttl 取 `ExpireHours`（<=0 用 24）；查询 `SELECT id, username, password FROM user WHERE username = ?`；用户查询 `SELECT id, username, COALESCE(nickname,'') FROM user WHERE username = ?`。
+- [x] **Step 4: 配置**：`Jwt.Secret: ${JWT_SECRET}`、`Jwt.ExpireHours: 24`；`conf.UseEnv()` + `auth.ValidateSecret`。
+- [x] **Step 5: 测试通过并提交**：`feat(user): 登录签发 JWT 并实现用户查询`
 
 ---
 
@@ -116,7 +118,7 @@ cp /tmp/protogen-out/order.pb.go ../order/rpc/pb/order/order.pb.go
 - Test: `app/user/api/internal/logic/loginlogic_test.go`, `userlogic_test.go`
 
 - [ ] **Step 1: 写失败测试**：登录透传 token/user_id/username；RPC 错误返回 error；用户查询透传 data。
-- [ ] **Step 2: 实现**：`server.Use(auth.Middleware(secret, "/user/login"))`；统一错误处理器映射 gRPC 状态；`Login` 组装 `types.LoginResp{Data: types.LoginData{...}}`。
+- [x] **Step 2: 实现**：`server.Use(auth.Middleware(secret, "/user/login"))`；统一错误处理器映射 gRPC 状态；`Login` 组装 `types.LoginResp{Data: types.LoginData{...}}`。
 - [ ] **Step 3: 测试通过并提交**：`feat(user-api): 接入 JWT 中间件并统一响应`
 
 ---
@@ -129,7 +131,7 @@ cp /tmp/protogen-out/order.pb.go ../order/rpc/pb/order/order.pb.go
 - Test: `app/order/api/internal/logic/createorderlogic_test.go`, `getorderlogic_test.go`
 
 - [ ] **Step 1: 写失败测试**：context 有 user_id 时 metadata 注入；无 user_id 返回 Unauthenticated；RPC 结果透传 `OrderInfo`。
-- [ ] **Step 2: 实现**：`server.Use(auth.Middleware(secret))`；`auth.UserID(l.ctx)`；`ctx := auth.InjectUserID(l.ctx, uid)`；映射新 request/response 类型。
+- [x] **Step 2: 实现**：`server.Use(auth.Middleware(secret))`；`auth.UserID(l.ctx)`；`ctx := auth.InjectUserID(l.ctx, uid)`；映射新 request/response 类型。
 - [ ] **Step 3: 测试通过并提交**：`feat(order-api): 接入 JWT 并传递用户身份`
 
 ---
@@ -148,9 +150,9 @@ cp /tmp/protogen-out/order.pb.go ../order/rpc/pb/order/order.pb.go
 - Produces: `CreateOrder` 返回完整 `OrderInfo`；`GetOrder` 只返回当前用户订单
 
 - [ ] **Step 1: 写失败测试**（sqlmock + `metadata.NewIncomingContext`）：缺 user_id 401；goods_id<=0 / 空名 / price<=0 400；创建成功 `INSERT` + `SELECT`；查询参数为 `id,user_id`；越权/不存在 404；DB 错误返回 error。
-- [ ] **Step 2: 实现**：`INSERT INTO orders (user_id, goods_id, goods_name, price, status) VALUES (?, ?, ?, ?, 1)`；`SELECT id, goods_id, goods_name, price, status, UNIX_TIMESTAMP(created_at) FROM orders WHERE id = ? AND user_id = ? AND deleted_at IS NULL`；`sql.ErrNoRows` → 404。
-- [ ] **Step 3: 建表脚本**：按 spec 第 7 节；compose 挂载为 `02-init-order.sql`。
-- [ ] **Step 4: 移除 order-rpc 对 user-rpc 的依赖**（ServiceContext、config、yaml、go.mod）。
+- [x] **Step 2: 实现**：`INSERT INTO orders (user_id, goods_id, goods_name, price, status) VALUES (?, ?, ?, ?, 1)`；`SELECT id, goods_id, goods_name, price, status, UNIX_TIMESTAMP(created_at) FROM orders WHERE id = ? AND user_id = ? AND deleted_at IS NULL`；`sql.ErrNoRows` → 404。
+- [x] **Step 3: 建表脚本**：按 spec 第 7 节；compose 挂载为 `02-init-order.sql`。
+- [x] **Step 4: 移除 order-rpc 对 user-rpc 的依赖**（ServiceContext、config、yaml、go.mod）。
 - [ ] **Step 5: 测试通过并提交**：`feat(order): 订单接入 MySQL 并做归属校验`
 
 ---
@@ -161,10 +163,10 @@ cp /tmp/protogen-out/order.pb.go ../order/rpc/pb/order/order.pb.go
 - Modify: `app/gateway/internal/config/config.go`, `app/gateway/gateway.go`, `app/gateway/etc/gateway.yaml`
 - Test: `app/gateway/internal/middleware/`（用 `pkg/auth` 的测试覆盖即可，网关增加一个错误处理器测试可选）
 
-- [ ] **Step 1: 配置**：自定义 `Config` 内嵌 `gateway.GatewayConf` + `Jwt.Secret`；`conf.UseEnv()`；启动校验密钥。
-- [ ] **Step 2: 中间件**：`gw.Use(auth.Middleware(secret, "/user/login"))`。
-- [ ] **Step 3: 错误处理**：`BizError.Code` → 对应 HTTP 状态；其他 → 500。
-- [ ] **Step 4: 构建并提交**：`feat(gateway): 接入 JWT 校验与身份透传`
+- [x] **Step 1: 配置**：自定义 `Config` 内嵌 `gateway.GatewayConf` + `Jwt.Secret`；`conf.UseEnv()`；启动校验密钥。
+- [x] **Step 2: 中间件**：`gw.Use(auth.Middleware(secret, "/user/login"))`。
+- [x] **Step 3: 错误处理**：`BizError.Code` → 对应 HTTP 状态；其他 → 500。
+- [x] **Step 4: 构建并提交**：`feat(gateway): 接入 JWT 校验与身份透传`
 
 ---
 
@@ -174,10 +176,10 @@ cp /tmp/protogen-out/order.pb.go ../order/rpc/pb/order/order.pb.go
 - Modify: `app/frontend/src/types/api.ts`, `src/utils/request.ts`, `src/stores/user.ts`
 - Modify: `src/views/user/UserList.vue`, `src/views/order/OrderCreate.vue`, `src/views/order/OrderList.vue`
 
-- [ ] **Step 1: 更新类型**：`UserInfo{id,username,nickname}`；`LoginResp{code,msg,data:{token,user_id,username}}`；`OrderInfo{id,goodsId,goodsName,price,status,createdAt}`；`CreateOrderReq` 去掉 `created_at`。
-- [ ] **Step 2: 更新请求**：`Authorization: Bearer <token>`。
-- [ ] **Step 3: 更新 store/views**：token 从 `res.data.token` 取；用户表展示 username/nickname；订单价格按分展示；创建订单不再传 created_at。
-- [ ] **Step 4: 构建并提交**：`cd app/frontend && npm run build`；`feat(frontend): 对齐统一响应与 JWT 鉴权`
+- [x] **Step 1: 更新类型**：`UserInfo{id,username,nickname}`；`LoginResp{code,msg,data:{token,user_id,username}}`；`OrderInfo{id,goodsId,goodsName,price,status,createdAt}`；`CreateOrderReq` 去掉 `created_at`。
+- [x] **Step 2: 更新请求**：`Authorization: Bearer <token>`。
+- [x] **Step 3: 更新 store/views**：token 从 `res.data.token` 取；用户表展示 username/nickname；订单价格按分展示；创建订单不再传 created_at。
+- [x] **Step 4: 构建并提交**：`cd app/frontend && npm run build`；`feat(frontend): 对齐统一响应与 JWT 鉴权`
 
 ---
 
@@ -189,17 +191,17 @@ cp /tmp/protogen-out/order.pb.go ../order/rpc/pb/order/order.pb.go
 - Modify: `README.md`（JWT_SECRET、init_order.sql、RPC 端口说明）
 - Modify: `app/user/rpc/etc/user.yaml`, `app/user/api/etc/user-api.yaml`, `app/order/api/etc/order.yaml`, `app/order/rpc/etc/order.yaml`, `app/gateway/etc/gateway.yaml`
 
-- [ ] **Step 1: compose**：为 gateway/user-rpc/user-api/order-api 注入 `JWT_SECRET`；order-rpc 增加 `Mysql` 配置；user-rpc/order-rpc 的 `ports` 改为 `expose`；挂载 `init_order.sql`；补 `depends_on: mysql`。
-- [ ] **Step 2: `.env.example` + `.gitignore`**：忽略 `.env`。
-- [ ] **Step 3: README**：说明 `cp .env.example .env`、设置 JWT_SECRET、已有 MySQL 卷需手动执行 `init_order.sql`。
-- [ ] **Step 4: 提交**：`chore(deploy): 配置 JWT 与订单数据库`
+- [x] **Step 1: compose**：为 gateway/user-rpc/user-api/order-api 注入 `JWT_SECRET`；order-rpc 增加 `Mysql` 配置；user-rpc/order-rpc 的 `ports` 改为 `expose`；挂载 `init_order.sql`；补 `depends_on: mysql`。
+- [x] **Step 2: `.env.example` + `.gitignore`**：忽略 `.env`；MySQL/Redis 密码也改为环境变量注入。
+- [x] **Step 3: README**：说明 `cp .env.example .env`、设置 `JWT_SECRET`/`MYSQL_ROOT_PASSWORD`/`REDIS_PASSWORD`、已有 MySQL 卷需手动执行 `init_order.sql`。
+- [x] **Step 4: 提交**：`chore(deploy): 配置 JWT 与订单数据库`
 
 ---
 
 ### Task 10: 全量校验与格式化
 
-- [ ] **Step 1: gofmt**：对各模块执行 `gofmt -w .`（覆盖 CI 要求的 10 个文件）。
-- [ ] **Step 2: 构建/测试**：
+- [x] **Step 1: gofmt**：对各模块执行 `gofmt -w .`（覆盖 CI 要求的 10 个文件）。
+- [x] **Step 2: 构建/测试**：
 
 ```bash
 for d in app/gateway app/user/api app/user/rpc app/order/api app/order/rpc pkg/auth pkg/errcode; do
@@ -207,10 +209,10 @@ for d in app/gateway app/user/api app/user/rpc app/order/api app/order/rpc pkg/a
 done
 ```
 
-- [ ] **Step 3: gofmt 检查**：所有模块 `gofmt -l .` 输出为空。
-- [ ] **Step 4: 前端**：`cd app/frontend && npm run build`。
-- [ ] **Step 5: 清理临时工具**：删除 `app/gateway/tools/protogen`。
-- [ ] **Step 6: 提交**：`chore: 格式化并补齐构建验证`
+- [x] **Step 3: gofmt 检查**：所有模块 `gofmt -l .` 输出为空。
+- [x] **Step 4: 前端**：`cd app/frontend && npm run build`。
+- [x] **Step 5: 清理临时工具**：删除 `app/gateway/tools/protogen`。
+- [x] **Step 6: 提交**：`chore: 格式化并补齐构建验证`
 
 ---
 
@@ -218,7 +220,7 @@ done
 
 ```bash
 # 1. 启动依赖 + 服务
-cp .env.example .env   # 设置 JWT_SECRET 和 MySQL 密码
+cp .env.example .env   # 设置 JWT_SECRET、MYSQL_ROOT_PASSWORD、REDIS_PASSWORD
 docker compose up -d --build
 
 # 2. 登录
