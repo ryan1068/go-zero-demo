@@ -534,11 +534,6 @@ spec:
                 secretKeyRef:
                   name: mall-secrets
                   key: JWT_SECRET
-            - name: MYSQL_ROOT_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mall-secrets
-                  key: MYSQL_ROOT_PASSWORD
           ports:
             - name: http
               containerPort: 8003

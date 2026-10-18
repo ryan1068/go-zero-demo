@@ -18,6 +18,7 @@ jobs:
           - app/order/rpc
           - app/product/api
           - app/product/rpc
+          - app/media/api
           - app/gateway
           - pkg/auth
           - pkg/errcode
@@ -48,6 +49,7 @@ jobs:
           - app/order/rpc
           - app/product/api
           - app/product/rpc
+          - app/media/api
           - pkg/auth
           - pkg/errcode
     steps:
@@ -73,6 +75,7 @@ jobs:
           - app/order/rpc
           - app/product/api
           - app/product/rpc
+          - app/media/api
           - app/gateway
     steps:
       - uses: actions/checkout@v4

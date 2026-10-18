@@ -21,7 +21,7 @@ func UploadBatchHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
-		resp, err := logic.NewUploadLogic(r.Context(), svcCtx.Config.Upload, svcCtx.Storage, svcCtx.MediaFiles).
+		resp, err := logic.NewUploadLogic(r.Context(), svcCtx.Config.Upload, svcCtx.Storage).
 			SaveBatch(r.MultipartForm.File["files"])
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)

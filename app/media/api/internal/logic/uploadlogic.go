@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"go-zero-demo/media-api/internal/config"
-	"go-zero-demo/media-api/internal/model"
 	"go-zero-demo/media-api/internal/storage"
 	"go-zero-demo/media-api/internal/types"
 	"go-zero-demo/pkg/auth"
@@ -26,16 +25,14 @@ type UploadLogic struct {
 	ctx     context.Context
 	cfg     config.UploadConfig
 	storage storage.Storage
-	files   model.MediaFileModel
 }
 
-func NewUploadLogic(ctx context.Context, cfg config.UploadConfig, store storage.Storage, files model.MediaFileModel) *UploadLogic {
+func NewUploadLogic(ctx context.Context, cfg config.UploadConfig, store storage.Storage) *UploadLogic {
 	return &UploadLogic{
 		Logger:  logx.WithContext(ctx),
 		ctx:     ctx,
 		cfg:     cfg,
 		storage: store,
-		files:   files,
 	}
 }
 
@@ -69,8 +66,7 @@ func (l *UploadLogic) Save(file multipart.File, header *multipart.FileHeader) (*
 		return nil, err
 	}
 
-	uploaderID, ok := auth.UserID(l.ctx)
-	if !ok {
+	if _, ok := auth.UserID(l.ctx); !ok {
 		return badUploadResp(errcode.Unauthorized, errcode.Msg(errcode.Unauthorized)), nil
 	}
 
@@ -81,23 +77,8 @@ func (l *UploadLogic) Save(file multipart.File, header *multipart.FileHeader) (*
 	}
 	name := hex.EncodeToString(random[:]) + ext
 
-	written, err := l.storage.Save(l.ctx, name, file, maxBytes)
-	if err != nil {
+	if _, err := l.storage.Save(l.ctx, name, file, maxBytes); err != nil {
 		l.Errorf("save upload file failed: %v", err)
-		return nil, err
-	}
-
-	if _, err := l.files.Insert(l.ctx, &model.MediaFile{
-		FileName:     name,
-		OriginalName: header.Filename,
-		Mime:         contentType,
-		Size:         written,
-		UploaderId:   uploaderID,
-	}); err != nil {
-		if deleteErr := l.storage.Delete(name); deleteErr != nil {
-			l.Errorf("remove upload after metadata failure: %v", deleteErr)
-		}
-		l.Errorf("write media metadata failed: %v", err)
 		return nil, err
 	}
 

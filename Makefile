@@ -6,7 +6,7 @@
 	gen-user-api gen-order-api gen-product-api gen-user-rpc gen-order-rpc \
 	frontend-dev frontend-build
 
-MODULES := app/gateway app/user/api app/user/rpc app/order/api app/order/rpc app/product/api app/product/rpc pkg/auth pkg/errcode
+MODULES := app/gateway app/user/api app/user/rpc app/order/api app/order/rpc app/product/api app/product/rpc app/media/api pkg/auth pkg/errcode
 
 MYSQL_HOST ?= 127.0.0.1
 MYSQL_PORT ?= 33069

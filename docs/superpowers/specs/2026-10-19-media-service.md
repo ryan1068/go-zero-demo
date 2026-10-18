@@ -22,9 +22,9 @@
 |---|---|---|
 | 服务 | `app/media/api`，HTTP 8003，独立 go.mod | 不建 RPC；调用方只需要 URL |
 | 存储 | 本机磁盘 `/app/uploads`，`Storage` 接口封装 | 单副本 + RWO PVC；后续可换 S3 |
-| 元数据 | `looklook_media.media_file` | 支持归属、审计、软删除 |
-| 鉴权 | JWT；上传/删除需登录，读取公开 | 与现有 `pkg/auth` 一致 |
-| 删除权限 | 上传者本人或管理员 | 防止越权删除 |
+| 元数据 | 不落库，文件系统是唯一状态 | 无列表、审计、软删除 |
+| 鉴权 | JWT；上传需登录，读取公开 | 与现有 `pkg/auth` 一致 |
+| 删除权限 | 仅管理员 | 不记录上传者，无法做归属校验 |
 | 新 URL | `/api/media/files/<name>` | 前端 nginx 代理 |
 | 旧 URL | `/api/product/uploads/<name>` 由 product-api 反向代理到 media | 历史数据不失效 |
 | 入口 | 前端 nginx 增加 `/api/media/` 路由 | 不经过 gateway |
@@ -43,11 +43,7 @@ GET    /files/:name                                 -> 文件流（公开）
 
 - 文件限制：jpg/jpeg/png/gif/webp，默认 10MB
 - 文件名：随机 hex + 原扩展名；拒绝路径穿越
-- 元数据：file_name、original_name、mime、size、uploader_id、created_at、deleted_at
-
-### 数据库
-
-新建 `looklook_media`，表 `media_file`；迁移脚本 `deploy/sql/migrations/20261019_media.sql`，初始化脚本 `deploy/sql/init_media.sql`。
+- 不写数据库，不保留原始文件名、MIME、大小或上传者信息
 
 ### product-api
 
@@ -65,13 +61,13 @@ GET    /files/:name                                 -> 文件流（公开）
 
 - 类型、大小、空文件校验；上传失败清理半成品文件
 - 文件名随机化，读取时强制 `filepath.Base` 并拒绝 `..`
-- JWT 校验；上传者从 token 取，不信任请求参数
-- 删除校验归属；软删除元数据，物理文件同步删除
+- JWT 校验；上传要求登录，删除要求管理员
+- 删除直接移除磁盘文件；文件不存在返回 404
 - 旧 URL 代理在 media 不可用时返回 502，不静默 404
 
 ## 测试策略
 
-- 失败测试先行：类型/大小校验、保存成功、元数据写入、删除归属、越权删除、文件读取
+- 失败测试先行：类型/大小校验、保存成功、删除权限、文件读取
 - 集成：上传 → 新 URL 200；旧 URL 200；删除后 404；未登录上传 401
 - 前端：`npm run build`；商品编辑上传流程手工验证
 - 门禁：`make check`、`make gen-check`、`make smoke`

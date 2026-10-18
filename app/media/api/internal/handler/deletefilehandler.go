@@ -18,7 +18,7 @@ func DeleteFileHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
-		resp, err := logic.NewDeleteFileLogic(r.Context(), svcCtx.Storage, svcCtx.MediaFiles).Delete(req.Name)
+		resp, err := logic.NewDeleteFileLogic(r.Context(), svcCtx.Storage).Delete(req.Name)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return

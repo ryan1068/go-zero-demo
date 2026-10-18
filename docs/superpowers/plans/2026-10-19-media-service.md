@@ -31,22 +31,21 @@
 - [x] 建 go.mod（依赖 go-zero、pkg/auth、pkg/errcode + replace）
 - [x] 定义 `media.api`：upload / batch / delete / get file
 - [x] 生成 handler/types（goctl 或按现有服务手工对齐），multipart 与文件流 handler 保持手写并从 gen-check 排除
-- [x] 配置 `looklook_media` DSN、`Upload.Dir`、`Upload.MaxSizeMB`、`Jwt.Secret`
+- [x] 配置 `Upload.Dir`、`Upload.MaxSizeMB`、`Jwt.Secret`
 
 ---
 
 ### Task 2: 实现上传、元数据与删除
 
 **Files:**
-- Create: `app/media/api/internal/logic/{uploadlogic,deleteFileLogic,serveFileLogic}.go`
-- Create: `app/media/api/internal/model/media_file.go`
-- Create: `deploy/sql/init_media.sql`, `deploy/sql/migrations/20261019_media.sql`
+- Create: `app/media/api/internal/logic/{uploadlogic,deletefilelogic}.go`
+- Create: `app/media/api/internal/handler/servefilehandler.go`
 
 **Steps:**
 - [x] `Storage` 接口 + `LocalStorage`：Save/Open/Delete
 - [x] 上传校验（扩展名、Content-Type、大小、空文件）并清理半成品
-- [x] 写 `media_file` 元数据（uploader_id 从 token 取）
-- [x] 删除：校验上传者/管理员，软删除 + 物理删除
+- [x] 不写数据库；上传只保存文件并返回 URL
+- [x] 删除：仅管理员，物理删除；文件不存在返回 404
 - [x] 读取：`filepath.Base` 防穿越，设置 Cache-Control
 - [x] 测试通过；`go build ./...`
 
@@ -82,7 +81,7 @@
 - [x] k8s 增加 media Deployment/Service（1 副本、Recreate、`media-files` PVC）
 - [x] product-api 移除 uploads 卷，配置 `Media.Url: http://media:8003`
 - [x] media 配置加入 ConfigMap 脚本；镜像加入 `k8s-images.sh`
-- [x] 应用数据库迁移；复制现有上传文件到 media 卷
+- [x] 复制现有上传文件到 media 卷
 - [x] 部署并等待 Ready
 
 ---

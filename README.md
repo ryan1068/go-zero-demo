@@ -47,7 +47,6 @@
 | `looklook_usercenter` | `user`、`user_address`、`admin_audit_log` |
 | `looklook_product` | `category`、`product`、`product_sku` |
 | `looklook_order` | `cart_item`、`orders`、`order_item`、`payment_record`、`order_log`、`after_sale`、`refund_record` |
-| `looklook_media` | `media_file` |
 
 字符集统一为 `utf8mb4`，排序规则统一为 `utf8mb4_unicode_ci`。MySQL 8 建表时必须显式写 `COLLATE=utf8mb4_unicode_ci`，只写 `DEFAULT CHARSET=utf8mb4` 会使用字符集自身的默认排序规则 `utf8mb4_0900_ai_ci`，导致库与表不一致。
 
@@ -208,7 +207,7 @@ make compose-on   # 恢复 Compose，Compose 数据卷未改动
 
 - 售后/退款：`POST /after-sales`、`GET /after-sales`、管理员审核/退款
 - SKU：`GET /product/:id/skus`、`POST /admin/skus`、`DELETE /admin/skus/:id`
-- 多图上传：`POST /admin/uploads/batch`、`DELETE /admin/uploads/:name`
+- 多图上传：`POST /api/media/uploads/batch`；删除：`DELETE /api/media/admin/files/:name`（管理员）
 - 搜索：MySQL 全文索引、`GET /products/suggest`、`GET /products/hot`
 - 行政区划：`GET /user/regions?parent_id=0`
 - 账号安全：`PUT /user/password`、`POST /user/logout`、登录失败限流
@@ -298,13 +297,14 @@ curl -X POST localhost:8081/api/media/uploads/batch \
 curl -o /dev/null -w '%{http_code}\n' \
   localhost:8081/api/media/files/<name>
 
-# 删除（上传者或管理员）
+# 删除（仅管理员）
 curl -X DELETE localhost:8081/api/media/admin/files/<name> \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 - 存储：Compose 用 `./data/uploads`；k8s 用 `media-files` PVC
-- 元数据：`looklook_media.media_file`
+- 不写数据库：文件系统是唯一状态，上传只返回 URL
+- 上传/文件流 handler 和 logic 为手写，`make gen-check` 只校验生成的 types/routes
 - 旧 URL `/api/product/uploads/<name>` 仍可用，由 product-api 反代到 media-api
 - 本机磁盘限制下 media-api 为单副本；切到对象存储后可扩到 3 副本
 

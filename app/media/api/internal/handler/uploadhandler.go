@@ -30,7 +30,7 @@ func UploadHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			}
 		}()
 
-		resp, err := logic.NewUploadLogic(r.Context(), svcCtx.Config.Upload, svcCtx.Storage, svcCtx.MediaFiles).Save(file, header)
+		resp, err := logic.NewUploadLogic(r.Context(), svcCtx.Config.Upload, svcCtx.Storage).Save(file, header)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return

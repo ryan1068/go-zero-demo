@@ -68,9 +68,5 @@ func (s *LocalStorage) Open(name string) (io.ReadSeekCloser, error) {
 }
 
 func (s *LocalStorage) Delete(name string) error {
-	err := os.Remove(filepath.Join(s.dir, filepath.Base(name)))
-	if err != nil && errors.Is(err, os.ErrNotExist) {
-		return nil
-	}
-	return err
+	return os.Remove(filepath.Join(s.dir, filepath.Base(name)))
 }

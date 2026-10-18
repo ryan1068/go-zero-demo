@@ -28,6 +28,17 @@ check_app() {
       # goctl cannot generate multipart upload or static file responses.
       excludes=(-x serveuploadhandler.go)
       ;;
+    app/media/api)
+      # Multipart upload, file streaming and file-system storage are hand-written.
+      # Only generated types/routes are checked.
+      excludes=(
+        -x uploadhandler.go -x uploadbatchhandler.go
+        -x deletefilehandler.go -x servefilehandler.go
+        -x uploadlogic.go -x uploadbatchlogic.go
+        -x deletefilelogic.go -x servefilelogic.go
+        -x servicecontext.go
+      )
+      ;;
   esac
 
   mkdir -p "$dest"
@@ -60,6 +71,7 @@ check_app() {
 check_app app/user/api user.api
 check_app app/order/api order.api
 check_app app/product/api product.api
+check_app app/media/api media.api
 
 if [ "$fail" -ne 0 ]; then
   echo "generated API code is out of date; run the matching make gen-*-api target"

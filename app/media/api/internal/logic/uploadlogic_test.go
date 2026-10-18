@@ -11,11 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/zeromicro/go-zero/core/stores/sqlx"
-
 	"go-zero-demo/media-api/internal/config"
-	"go-zero-demo/media-api/internal/model"
 	"go-zero-demo/media-api/internal/storage"
 	"go-zero-demo/pkg/auth"
 	"go-zero-demo/pkg/errcode"
@@ -52,15 +48,20 @@ func newUploadFile(t *testing.T, name string, content []byte) (multipart.File, *
 	return file, header
 }
 
+func newUploadLogic(ctx context.Context, dir string) *UploadLogic {
+	cfg := config.UploadConfig{Dir: dir, URLPrefix: "/api/media/files/", MaxSizeMB: 1}
+	return NewUploadLogic(ctx, cfg, storage.NewLocal(dir))
+}
+
 func TestUpload_Validation(t *testing.T) {
 	adminCtx := auth.WithUserRole(context.Background(), 7, "admin", auth.RoleAdmin)
 
 	cases := []struct {
-		name      string
-		filename  string
-		content   []byte
-		ctx       context.Context
-		wantCode  int32
+		name     string
+		filename string
+		content  []byte
+		ctx      context.Context
+		wantCode int32
 	}{
 		{name: "bad extension", filename: "a.txt", content: pngBytes, ctx: adminCtx, wantCode: errcode.BadRequest},
 		{name: "too large", filename: "a.png", content: bytes.Repeat([]byte{0}, 1024*1024+1), ctx: adminCtx, wantCode: errcode.BadRequest},
@@ -71,20 +72,11 @@ func TestUpload_Validation(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			db, mock, err := sqlmock.New()
-			if err != nil {
-				t.Fatalf("create sqlmock: %v", err)
-			}
-			defer db.Close()
-
 			dir := t.TempDir()
-			cfg := config.UploadConfig{Dir: dir, URLPrefix: "/api/media/files/", MaxSizeMB: 1}
-			logic := NewUploadLogic(tc.ctx, cfg, storage.NewLocal(dir), model.NewMediaFileModel(sqlx.NewSqlConnFromDB(db)))
-
 			file, header := newUploadFile(t, tc.filename, tc.content)
 			defer file.Close()
 
-			resp, err := logic.Save(file, header)
+			resp, err := newUploadLogic(tc.ctx, dir).Save(file, header)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -99,36 +91,19 @@ func TestUpload_Validation(t *testing.T) {
 			if len(entries) != 0 {
 				t.Fatalf("expected no files on disk, got %d", len(entries))
 			}
-			if err := mock.ExpectationsWereMet(); err != nil {
-				t.Fatalf("unmet sql expectations: %v", err)
-			}
 		})
 	}
 }
 
 func TestUploadBatch_Success(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("create sqlmock: %v", err)
-	}
-	defer db.Close()
-
 	dir := t.TempDir()
-	cfg := config.UploadConfig{Dir: dir, URLPrefix: "/api/media/files/", MaxSizeMB: 1}
 	ctx := auth.WithUserRole(context.Background(), 7, "admin", auth.RoleAdmin)
-	logic := NewUploadLogic(ctx, cfg, storage.NewLocal(dir), model.NewMediaFileModel(sqlx.NewSqlConnFromDB(db)))
+	logic := newUploadLogic(ctx, dir)
 
 	first, firstHeader := newUploadFile(t, "a.png", pngBytes)
 	defer first.Close()
 	second, secondHeader := newUploadFile(t, "b.png", pngBytes)
 	defer second.Close()
-
-	mock.ExpectExec("(?i)insert into media_file").
-		WithArgs(sqlmock.AnyArg(), "a.png", "image/png", int64(len(pngBytes)), int64(7)).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectExec("(?i)insert into media_file").
-		WithArgs(sqlmock.AnyArg(), "b.png", "image/png", int64(len(pngBytes)), int64(7)).
-		WillReturnResult(sqlmock.NewResult(2, 1))
 
 	resp, err := logic.SaveBatch([]*multipart.FileHeader{firstHeader, secondHeader})
 	if err != nil {
@@ -141,41 +116,23 @@ func TestUploadBatch_Success(t *testing.T) {
 		t.Fatalf("expected 2 urls, got %d", len(resp.Urls))
 	}
 	for _, url := range resp.Urls {
-		if !strings.HasPrefix(url, cfg.URLPrefix) {
-			t.Fatalf("expected url prefix %q, got %q", cfg.URLPrefix, url)
+		if !strings.HasPrefix(url, "/api/media/files/") {
+			t.Fatalf("expected url prefix %q, got %q", "/api/media/files/", url)
 		}
-		name := strings.TrimPrefix(url, cfg.URLPrefix)
+		name := strings.TrimPrefix(url, "/api/media/files/")
 		if _, statErr := os.Stat(filepath.Join(dir, name)); statErr != nil {
 			t.Fatalf("uploaded file not found: %v", statErr)
 		}
 	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("unmet sql expectations: %v", err)
-	}
 }
 
 func TestUpload_Success(t *testing.T) {
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("create sqlmock: %v", err)
-	}
-	defer db.Close()
-
 	dir := t.TempDir()
-	cfg := config.UploadConfig{
-		Dir:       dir,
-		URLPrefix: "/api/media/files/",
-		MaxSizeMB: 1,
-	}
 	ctx := auth.WithUserRole(context.Background(), 7, "admin", auth.RoleAdmin)
-	logic := NewUploadLogic(ctx, cfg, storage.NewLocal(dir), model.NewMediaFileModel(sqlx.NewSqlConnFromDB(db)))
+	logic := newUploadLogic(ctx, dir)
 
 	file, header := newUploadFile(t, "a.png", pngBytes)
 	defer file.Close()
-
-	mock.ExpectExec("(?i)insert into media_file").
-		WithArgs(sqlmock.AnyArg(), "a.png", "image/png", int64(len(pngBytes)), int64(7)).
-		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	resp, err := logic.Save(file, header)
 	if err != nil {
@@ -184,18 +141,15 @@ func TestUpload_Success(t *testing.T) {
 	if resp.Code != 200 {
 		t.Fatalf("expected code 200, got %d (%s)", resp.Code, resp.Msg)
 	}
-	if !strings.HasPrefix(resp.Url, cfg.URLPrefix) {
-		t.Fatalf("expected url prefix %q, got %q", cfg.URLPrefix, resp.Url)
+	if !strings.HasPrefix(resp.Url, "/api/media/files/") {
+		t.Fatalf("expected url prefix %q, got %q", "/api/media/files/", resp.Url)
 	}
 
-	name := strings.TrimPrefix(resp.Url, cfg.URLPrefix)
+	name := strings.TrimPrefix(resp.Url, "/api/media/files/")
 	if name == "" || strings.ContainsAny(name, "/\\") {
 		t.Fatalf("unexpected file name %q", name)
 	}
 	if _, err := os.Stat(filepath.Join(dir, name)); err != nil {
 		t.Fatalf("uploaded file not found: %v", err)
-	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("unmet sql expectations: %v", err)
 	}
 }

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/zeromicro/go-zero/core/stores/sqlx"
 	"github.com/zeromicro/go-zero/rest"
 )
 
@@ -17,7 +16,6 @@ type UploadConfig struct {
 
 type Config struct {
 	rest.RestConf
-	Mysql  sqlx.SqlConf
 	Jwt    JwtConfig
 	Upload UploadConfig
 }
