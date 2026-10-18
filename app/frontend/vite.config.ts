@@ -28,6 +28,12 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/order/, ''),
         },
+        // 代理到 product-api (8002)
+        '/api/product': {
+          target: env.VITE_PRODUCT_API_URL || 'http://localhost:8002',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/product/, ''),
+        },
       },
     },
   }

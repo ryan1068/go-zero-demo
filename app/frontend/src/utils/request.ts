@@ -15,7 +15,7 @@ export function createRequest(baseURL: string): AxiosInstance {
   instance.interceptors.request.use((config) => {
     const token = localStorage.getItem('token')
     if (token) {
-      config.headers.Authorization = token
+      config.headers.Authorization = `Bearer ${token}`
     }
     return config
   })
@@ -41,3 +41,5 @@ export function createRequest(baseURL: string): AxiosInstance {
 export const userRequest = createRequest('/api/user')
 /** 订单服务请求实例 */
 export const orderRequest = createRequest('/api/order')
+/** 商品服务请求实例 */
+export const productRequest = createRequest('/api/product')

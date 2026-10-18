@@ -1,87 +1,104 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { getUser } from '@/api/user'
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { adminListOrders, dashboard } from '@/api/order'
+import { productStats } from '@/api/product'
+import { formatPrice, formatTime, orderStatusText, orderStatusType } from '@/utils/format'
+import type { DashboardData, OrderInfo, ProductStats } from '@/types/api'
 
-const userCount = ref(0)
-const orderCount = ref(0)
+const router = useRouter()
+const data = ref<DashboardData>({
+  today_order_count: 0,
+  today_paid_amount: 0,
+  pending_shipment_count: 0,
+  product_count: 0,
+  low_stock_count: 0,
+})
+const stats = ref<ProductStats>({ total: 0, on_sale: 0, off_sale: 0, low_stock: 0 })
+const recent = ref<OrderInfo[]>([])
 const loading = ref(false)
 
-onMounted(async () => {
+async function load() {
   loading.value = true
   try {
-    // 尝试查询测试用户确认后端连通性
-    await getUser('admin')
-    userCount.value = 1
-  } catch {
-    // ignore
+    const [d, s, orders] = await Promise.all([
+      dashboard(),
+      productStats(),
+      adminListOrders({ page: 1, page_size: 5 }),
+    ])
+    data.value = d
+    stats.value = s
+    recent.value = orders.list ?? []
+  } finally {
+    loading.value = false
   }
-  loading.value = false
-})
+}
 
-const stats = [
-  { label: '用户总数', value: userCount, icon: 'User', color: '#409eff', bg: '#ecf5ff' },
-  { label: '订单总数', value: orderCount, icon: 'Document', color: '#67c23a', bg: '#f0f9eb' },
-  { label: 'API 调用', value: '2', icon: 'Connection', color: '#e6a23c', bg: '#fdf6ec' },
-  { label: '服务状态', value: '正常', icon: 'CircleCheck', color: '#f56c6c', bg: '#fef0f0' },
-]
+onMounted(load)
 </script>
 
 <template>
-  <div class="dashboard">
-    <h3 class="page-title">仪表盘</h3>
+  <div v-loading="loading">
+    <h3 class="page-title">数据看板</h3>
 
-    <el-row :gutter="20">
-      <el-col v-for="s in stats" :key="s.label" :span="6">
-        <el-card shadow="hover" class="stat-card" v-loading="loading">
-          <div class="stat-row">
-            <div class="stat-icon" :style="{ background: s.bg, color: s.color }">
-              <el-icon :size="28"><component :is="s.icon" /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ s.value }}</div>
-              <div class="stat-label">{{ s.label }}</div>
-            </div>
-          </div>
+    <el-row :gutter="18">
+      <el-col :span="6">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-value">{{ data.today_order_count }}</div>
+          <div class="stat-label">今日订单</div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-value">¥{{ formatPrice(data.today_paid_amount) }}</div>
+          <div class="stat-label">今日销售额</div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-value">{{ data.pending_shipment_count }}</div>
+          <div class="stat-label">待发货订单</div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-value">{{ data.product_count }}</div>
+          <div class="stat-label">商品总数</div>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px">
-      <el-col :span="12">
+    <el-row :gutter="18" class="second-row">
+      <el-col :span="8">
         <el-card shadow="hover">
-          <template #header>微服务架构</template>
-          <div class="arch-diagram">
-            <div class="arch-node gateway">Gateway<br/>:8888</div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-node api">user-api<br/>:8000</div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-node rpc">user-rpc<br/>:9000</div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-node db">MySQL<br/>:3306</div>
-          </div>
-          <div class="arch-diagram" style="margin-top: 12px">
-            <div class="arch-node api">order-api<br/>:8001</div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-node rpc">order-rpc<br/>:9001</div>
-            <div class="arch-arrow">→</div>
-            <div class="arch-node rpc" style="background: #fdf6ec; color: #e6a23c">user-rpc<br/>:9000</div>
-          </div>
+          <template #header>商品状态</template>
+          <div class="mini-stat"><span>上架商品</span><b>{{ stats.on_sale }}</b></div>
+          <div class="mini-stat"><span>下架商品</span><b>{{ stats.off_sale }}</b></div>
+          <div class="mini-stat"><span>低库存商品</span><b class="warn">{{ stats.low_stock }}</b></div>
         </el-card>
       </el-col>
-
-      <el-col :span="12">
+      <el-col :span="16">
         <el-card shadow="hover">
-          <template #header>技术栈</template>
-          <el-descriptions :column="1" border size="small">
-            <el-descriptions-item label="前端框架">Vue 3 + TypeScript + Vite</el-descriptions-item>
-            <el-descriptions-item label="UI 组件库">Element Plus</el-descriptions-item>
-            <el-descriptions-item label="微服务框架">go-zero v1.8.5</el-descriptions-item>
-            <el-descriptions-item label="服务发现">etcd</el-descriptions-item>
-            <el-descriptions-item label="数据库">MySQL 8.0</el-descriptions-item>
-            <el-descriptions-item label="缓存">Redis 6.2</el-descriptions-item>
-            <el-descriptions-item label="链路追踪">Jaeger</el-descriptions-item>
-            <el-descriptions-item label="监控">Prometheus + Grafana</el-descriptions-item>
-          </el-descriptions>
+          <template #header>
+            <div class="card-header">
+              <span>最近订单</span>
+              <el-button text type="primary" @click="router.push('/order')">查看全部</el-button>
+            </div>
+          </template>
+          <el-table :data="recent" size="small">
+            <el-table-column prop="order_no" label="订单号" min-width="190" />
+            <el-table-column label="金额" width="100">
+              <template #default="{ row }">¥{{ formatPrice(row.pay_amount) }}</template>
+            </el-table-column>
+            <el-table-column label="状态" width="90">
+              <template #default="{ row }">
+                <el-tag :type="orderStatusType(row.status)" size="small">{{ orderStatusText(row.status) }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="时间" width="170">
+              <template #default="{ row }">{{ formatTime(row.created_at) }}</template>
+            </el-table-column>
+          </el-table>
         </el-card>
       </el-col>
     </el-row>
@@ -89,81 +106,14 @@ const stats = [
 </template>
 
 <style scoped>
-.page-title {
-  font-size: 18px;
-  margin-bottom: 20px;
-  color: #303133;
-}
-
-.stat-card {
-  border-radius: 8px;
-}
-
-.stat-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.stat-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.stat-label {
-  font-size: 13px;
-  color: #909399;
-  margin-top: 2px;
-}
-
-.arch-diagram {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.arch-node {
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 12px;
-  text-align: center;
-  font-weight: 500;
-  line-height: 1.5;
-}
-
-.arch-node.gateway {
-  background: #ecf5ff;
-  color: #409eff;
-}
-
-.arch-node.api {
-  background: #f0f9eb;
-  color: #67c23a;
-}
-
-.arch-node.rpc {
-  background: #fdf6ec;
-  color: #e6a23c;
-}
-
-.arch-node.db {
-  background: #fef0f0;
-  color: #f56c6c;
-}
-
-.arch-arrow {
-  color: #c0c4cc;
-  font-size: 18px;
-}
+.page-title { margin: 0 0 18px; color: #303133; }
+.stat-card { text-align: center; }
+.stat-value { font-size: 28px; font-weight: 700; color: #303133; }
+.stat-label { margin-top: 6px; color: #909399; font-size: 13px; }
+.second-row { margin-top: 18px; }
+.mini-stat { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f2f2f2; color: #606266; }
+.mini-stat:last-child { border-bottom: none; }
+.mini-stat b { color: #303133; }
+.mini-stat b.warn { color: #e6a23c; }
+.card-header { display: flex; justify-content: space-between; align-items: center; }
 </style>
