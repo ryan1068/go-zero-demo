@@ -4,7 +4,7 @@
 
 ## 完成标准
 
-- [ ] L3 有 spec / ADR
+- [ ] L3 有 spec / ADR，且完成独立 review（范围限定本次 diff）
 - [ ] 测试：重构有 characterization；新功能先红后绿；DB 改动有集成或真实环境验证
 - [ ] `make check` + `make gen-check` 通过，没有手改生成文件
 - [ ] 无密码/密钥/敏感日志；新增接口有鉴权；输入已校验

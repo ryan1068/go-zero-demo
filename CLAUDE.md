@@ -5,8 +5,8 @@ go-zero 微服务商城：user（用户）、product（商品）、order（订�
 
 ## 开发流程（摘要）
 
-- L1 直接改；L2 走计划 + 测试 + review；L3 先 spec。
-- 每阶段 `make check`；完成前独立 review + `make smoke`。
+- L1 直接改；L2 走计划 + 测试 + 自查；L3 先 spec。
+- 每阶段 `make check`；完成前 L3/高风险做独立 review + `make smoke`。
 - 关键决策写入 `docs/adr/`。
 
 ## 架构
