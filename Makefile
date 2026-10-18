@@ -1,37 +1,39 @@
-.PHONY: build test run clean gen
+.PHONY: build test test-short lint fmt protogen run clean gen
 
-SERVICES := gateway user-api user-rpc order-api order-rpc
+MODULES := app/gateway app/user/api app/user/rpc app/order/api app/order/rpc app/product/api app/product/rpc
 
 build:
-	@for s in $(SERVICES); do \
-		echo ">>> building $$s..."; \
-		(cd app/$${s/rpc/rpc} && go build ./...) || exit 1; \
-		(cd app/$${s/api/api} 2>/dev/null && go build ./...) || true; \
+	@for d in $(MODULES); do \
+		echo ">>> building $$d..."; \
+		(cd $$d && go build ./...) || exit 1; \
 	done
 	@echo "all services built"
 
 test:
-	@for d in app/user/api app/user/rpc app/order/api app/order/rpc; do \
+	@for d in $(MODULES); do \
 		echo ">>> testing $$d..."; \
-		(cd $$d && go test ./... -v -count=1) || exit 1; \
+		(cd $$d && go test ./... -count=1) || exit 1; \
 	done
 	@echo "all tests passed"
 
 test-short:
-	@for d in app/user/api app/user/rpc app/order/api app/order/rpc; do \
+	@for d in $(MODULES); do \
 		(cd $$d && go test ./... -count=1) || exit 1; \
 	done
 
 lint:
-	@for d in app/user/api app/user/rpc app/order/api app/order/rpc app/gateway; do \
+	@for d in $(MODULES); do \
 		echo ">>> linting $$d..."; \
 		(cd $$d && go vet ./...) || exit 1; \
 	done
 
 fmt:
-	@for d in app/user/api app/user/rpc app/order/api app/order/rpc app/gateway; do \
+	@for d in $(MODULES); do \
 		(cd $$d && gofmt -w .); \
 	done
+
+protogen:
+	./scripts/protogen.sh
 
 run-gateway:
 	cd app/gateway && go run gateway.go

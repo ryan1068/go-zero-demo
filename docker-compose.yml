@@ -196,6 +196,8 @@ services:
       - ./data/mysql/data:/var/lib/mysql
       # 初始化SQL
       - ./deploy/sql/init_user.sql:/docker-entrypoint-initdb.d/01-init-user.sql
+      - ./deploy/sql/init_order.sql:/docker-entrypoint-initdb.d/02-init-order.sql
+      - ./deploy/sql/init_product.sql:/docker-entrypoint-initdb.d/03-init-product.sql
       # 日志
     command:
       # 将mysql8.0默认密码策略 修改为 原先 策略 (mysql8.0对其默认策略做了更改 会导致密码无法匹配) 
@@ -245,13 +247,16 @@ services:
       - looklook_net
 
   gateway:
-    image: gateway:v1
+    image: gateway:local
     build:
       context: .
       dockerfile: app/gateway/Dockerfile
     container_name: gateway
+    restart: unless-stopped
     ports:
       - "8888:8888"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:?请先复制 .env.example 为 .env 并设置 JWT_SECRET}
     volumes:
       - ./app/gateway/etc:/app/etc
     networks:
@@ -260,28 +265,35 @@ services:
       - etcd
 
   user-rpc:
-    image: user-rpc:v1
+    image: user-rpc:local
     build:
       context: .
       dockerfile: app/user/rpc/Dockerfile
     container_name: user-rpc
-    ports:
-      - "9000:9000"
+    restart: unless-stopped
+    expose:
+      - "9000"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:?请先复制 .env.example 为 .env 并设置 JWT_SECRET}
     volumes:
       - ./app/user/rpc/etc:/app/etc
     networks:
       - looklook_net
     depends_on:
       - etcd
+      - mysql
 
   user-api:
-    image: user-api:v1
+    image: user-api:local
     build:
       context: .
       dockerfile: app/user/api/Dockerfile
     container_name: user-api
+    restart: unless-stopped
     ports:
       - "8000:8000"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:?请先复制 .env.example 为 .env 并设置 JWT_SECRET}
     volumes:
       - ./app/user/api/etc:/app/etc
     networks:
@@ -290,28 +302,33 @@ services:
       - etcd
 
   order-rpc:
-    image: order-rpc:v1
+    image: order-rpc:local
     build:
       context: .
       dockerfile: app/order/rpc/Dockerfile
     container_name: order-rpc
-    ports:
-      - "9001:9001"
+    restart: unless-stopped
+    expose:
+      - "9001"
     volumes:
       - ./app/order/rpc/etc:/app/etc
     networks:
       - looklook_net
     depends_on:
       - etcd
+      - mysql
 
   order-api:
-    image: order-api:v1
+    image: order-api:local
     build:
       context: .
       dockerfile: app/order/api/Dockerfile
     container_name: order-api
+    restart: unless-stopped
     ports:
       - "8001:8001"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:?请先复制 .env.example 为 .env 并设置 JWT_SECRET}
     volumes:
       - ./app/order/api/etc:/app/etc
     networks:
@@ -319,17 +336,60 @@ services:
     depends_on:
       - etcd
 
+
+
+  product-rpc:
+    image: product-rpc:local
+    build:
+      context: .
+      dockerfile: app/product/rpc/Dockerfile
+    container_name: product-rpc
+    restart: unless-stopped
+    expose:
+      - "9002"
+    volumes:
+      - ./app/product/rpc/etc:/app/etc
+    networks:
+      - looklook_net
+    depends_on:
+      - etcd
+      - mysql
+
+  product-api:
+    image: product-api:local
+    build:
+      context: .
+      dockerfile: app/product/api/Dockerfile
+    container_name: product-api
+    restart: unless-stopped
+    ports:
+      - "8002:8002"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:?请先复制 .env.example 为 .env 并设置 JWT_SECRET}
+    volumes:
+      - ./app/product/api/etc:/app/etc
+      - ./data/uploads:/app/uploads
+    networks:
+      - looklook_net
+    depends_on:
+      - etcd
+      - product-rpc
+
   # 前端 — Vue 3 + Element Plus 后台管理
   frontend:
+    image: frontend:local
     build: ./app/frontend
     container_name: frontend
+    restart: unless-stopped
     ports:
-      - "80:80"
+      - "8080:80"
+      - "8081:80"
     networks:
       - looklook_net
     depends_on:
       - user-api
       - order-api
+      - product-api
 
 volumes:
   etcd_data:

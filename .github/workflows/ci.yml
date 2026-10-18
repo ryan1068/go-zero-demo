@@ -16,13 +16,15 @@ jobs:
           - app/user/rpc
           - app/order/api
           - app/order/rpc
+          - app/product/api
+          - app/product/rpc
           - app/gateway
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: "1.23.3"
 
       - name: go vet
         working-directory: ${{ matrix.module }}
@@ -42,12 +44,14 @@ jobs:
           - app/user/rpc
           - app/order/api
           - app/order/rpc
+          - app/product/api
+          - app/product/rpc
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: "1.23.3"
 
       - name: go test
         working-directory: ${{ matrix.module }}
@@ -63,13 +67,15 @@ jobs:
           - app/user/rpc
           - app/order/api
           - app/order/rpc
+          - app/product/api
+          - app/product/rpc
           - app/gateway
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: "1.23.3"
 
       - name: go build
         working-directory: ${{ matrix.module }}
