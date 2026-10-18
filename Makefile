@@ -2,6 +2,7 @@
 	run-gateway run-user-api run-user-rpc run-order-api run-order-rpc run-product-api run-product-rpc \
 	gen-model gen-check smoke db-backup k8s-up k8s-down k8s-status \
 	k8s-images k8s-secrets k8s-config k8s-deploy k8s-restore-db k8s-backup k8s-delete \
+	k8s-start k8s-stop k8s-restart compose-off compose-on \
 	gen-user-api gen-order-api gen-product-api gen-user-rpc gen-order-rpc \
 	frontend-dev frontend-build
 
@@ -119,6 +120,24 @@ k8s-down:
 k8s-status:
 	@k3d cluster list
 	@kubectl get nodes -o wide
+
+k8s-start:
+	@k3d cluster start mall 2>/dev/null || true
+	@kubectl wait --for=condition=Ready nodes --all --timeout=180s
+
+k8s-stop:
+	k3d cluster stop mall
+
+k8s-restart:
+	k3d cluster stop mall
+	k3d cluster start mall
+	kubectl wait --for=condition=Ready nodes --all --timeout=180s
+
+compose-off:
+	@./scripts/compose-off.sh
+
+compose-on:
+	@./scripts/compose-on.sh
 
 k8s-images:
 	@./scripts/k8s-images.sh

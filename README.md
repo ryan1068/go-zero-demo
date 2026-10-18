@@ -167,21 +167,28 @@ make k8s-backup                                         # 导出 k8s 中的数�
 - MySQL / Redis / etcd：**1 副本**，仍是单点
 - 决策记录见 `docs/adr/0002-k8s-ha-topology.md`
 
-切换前先停止 Compose 释放 host 端口（数据卷保留）：
+### 环境切换
 
 ```bash
-docker compose stop
+make compose-off   # 停止 Compose 并禁止其随 Docker 自动启动
+make k8s-restart   # Docker Desktop 重启后恢复 k8s（k3s 可能因网络变化退出）
+make k8s-stop      # 停止 k8s，保留集群和数据
+make compose-on    # 切回 Compose（先 make k8s-stop）
 ```
+
+Compose 容器的数据卷不会被删除。
 
 访问地址与 Compose 一致：`localhost:8080` 管理后台、`localhost:8081` 商城、`localhost:8000-8002` API、`localhost:8888` 网关。
 
-回滚前先备份 k8s 侧数据；`k8s-down` 会删除 k8s 的 PVC：
+回滚前先备份 k8s 侧数据：
 
 ```bash
-make k8s-backup      # 导出 k8s MySQL 到 backups/
-make k8s-down        # 删除 k8s 集群，释放端口
-docker compose start # 恢复 Compose，Compose 数据卷未改动
+make k8s-backup   # 导出 k8s MySQL 到 backups/
+make k8s-stop     # 停止 k8s，保留集群和数据
+make compose-on   # 恢复 Compose，Compose 数据卷未改动
 ```
+
+需要彻底删除 k8s 集群时再用 `make k8s-down`；它会删除 k8s 的 PVC。
 
 注意：
 
