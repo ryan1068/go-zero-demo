@@ -1,27 +1,40 @@
 package svc
 
 import (
-	"database/sql"
-	"log"
+	"errors"
 
-	_ "github.com/go-sql-driver/mysql"
+	mysqlDriver "github.com/go-sql-driver/mysql"
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
 	"go-zero-demo/product-rpc/internal/config"
+	"go-zero-demo/product-rpc/internal/model"
 )
 
 type ServiceContext struct {
 	Config config.Config
-	DB     *sql.DB
+	DB     sqlx.SqlConn
+
+	CategoryModel   model.CategoryModel
+	ProductModel    model.ProductModel
+	ProductSkuModel model.ProductSkuModel
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
-	db, err := sql.Open("mysql", c.Mysql.DataSource)
-	if err != nil {
-		log.Fatalf("Failed to connect to MySQL: %v", err)
+	conn := sqlx.MustNewConn(c.Mysql, sqlx.WithAcceptable(acceptable))
+	return &ServiceContext{
+		Config:          c,
+		DB:              conn,
+		CategoryModel:   model.NewCategoryModel(conn),
+		ProductModel:    model.NewProductModel(conn),
+		ProductSkuModel: model.NewProductSkuModel(conn),
 	}
-	if err := db.Ping(); err != nil {
-		log.Fatalf("Failed to ping MySQL: %v", err)
+}
+
+// acceptable keeps normal not-found and duplicate-key outcomes from opening
+// the go-zero breaker.
+func acceptable(err error) bool {
+	if err == nil || errors.Is(err, sqlx.ErrNotFound) {
+		return true
 	}
-	db.SetMaxOpenConns(20)
-	db.SetMaxIdleConns(10)
-	return &ServiceContext{Config: c, DB: db}
+	var mysqlErr *mysqlDriver.MySQLError
+	return errors.As(err, &mysqlErr) && mysqlErr.Number == 1062
 }
