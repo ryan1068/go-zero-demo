@@ -6,6 +6,7 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { updateUserRole, updateUserStatus } from '@/api/user'
 import type { CreateUserReq, ListUsersParams, UserInfo } from '@/types/api'
+import { passwordRule } from '@/utils/validation'
 
 const store = useUserStore()
 
@@ -43,7 +44,7 @@ const rules: FormRules = {
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 72, message: '密码长度为 6-72 个字符', trigger: 'blur' },
+    passwordRule,
   ],
   email: [{ type: 'email', message: '邮箱格式不正确', trigger: 'blur' }],
 }
@@ -323,7 +324,7 @@ onMounted(loadUsers)
           </el-col>
           <el-col :span="12">
             <el-form-item label="密码" prop="password">
-              <el-input v-model="form.password" type="password" show-password placeholder="6-72 个字符" />
+              <el-input v-model="form.password" type="password" show-password placeholder="8-72 位，含字母和数字" />
             </el-form-item>
           </el-col>
           <el-col :span="12">

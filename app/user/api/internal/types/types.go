@@ -54,12 +54,12 @@ type BaseResp struct {
 
 type ChangePasswordReq struct {
 	OldPassword string `json:"old_password" validate:"required"`
-	NewPassword string `json:"new_password" validate:"required"`
+	NewPassword string `json:"new_password" validate:"required,min=8,max=72"`
 }
 
 type CreateUserReq struct {
 	Username string `json:"username" validate:"required,min=3,max=64"`
-	Password string `json:"password" validate:"required,min=6,max=72"`
+	Password string `json:"password" validate:"required,min=8,max=72"`
 	Nickname string `json:"nickname"`
 	Email    string `json:"email"`
 	Phone    string `json:"phone"`
@@ -158,7 +158,7 @@ type RegionInfo struct {
 
 type RegisterReq struct {
 	Username string `json:"username" validate:"required,min=3,max=64"`
-	Password string `json:"password" validate:"required,min=6,max=72"`
+	Password string `json:"password" validate:"required,min=8,max=72"`
 	Nickname string `json:"nickname"`
 	Email    string `json:"email"`
 	Phone    string `json:"phone"`

@@ -6,6 +6,7 @@ import type { FormInstance, FormRules } from 'element-plus'
 import BrandLogo from '@/components/BrandLogo.vue'
 import { useUserStore } from '@/stores/user'
 import { isAdminMode, mallUrl, openInNewTab } from '@/utils/portal'
+import { passwordRule } from '@/utils/validation'
 
 const router = useRouter()
 const store = useUserStore()
@@ -36,7 +37,7 @@ const rules: FormRules = {
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 72, message: '密码长度为 6-72 个字符', trigger: 'blur' },
+    passwordRule,
   ],
   confirmPassword: [
     { required: true, message: '请再次输入密码', trigger: 'blur' },
@@ -121,7 +122,7 @@ async function handleRegister() {
             </el-col>
             <el-col :span="12">
               <el-form-item label="密码" prop="password">
-                <el-input v-model="form.password" type="password" show-password placeholder="6-72 个字符" />
+                <el-input v-model="form.password" type="password" show-password placeholder="8-72 位，含字母和数字" />
               </el-form-item>
             </el-col>
             <el-col :span="12">

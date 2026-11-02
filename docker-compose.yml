@@ -300,7 +300,8 @@ services:
     container_name: user-api
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      # 只绑本机，避免绕过 nginx 直连并伪造 X-Real-IP / X-Forwarded-For
+      - "127.0.0.1:8000:8000"
     environment:
       - JWT_SECRET=${JWT_SECRET:?请先复制 .env.example 为 .env 并设置 JWT_SECRET}
       - REDIS_PASSWORD=${REDIS_PASSWORD:?请先复制 .env.example 为 .env 并设置 REDIS_PASSWORD}
@@ -339,7 +340,7 @@ services:
     container_name: order-api
     restart: unless-stopped
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"
     environment:
       - JWT_SECRET=${JWT_SECRET:?请先复制 .env.example 为 .env 并设置 JWT_SECRET}
     volumes:
@@ -378,7 +379,7 @@ services:
     container_name: product-api
     restart: unless-stopped
     ports:
-      - "8002:8002"
+      - "127.0.0.1:8002:8002"
     environment:
       - JWT_SECRET=${JWT_SECRET:?请先复制 .env.example 为 .env 并设置 JWT_SECRET}
     volumes:

@@ -29,8 +29,9 @@ func (l *ChangePasswordLogic) ChangePassword(in *user.ChangePasswordReq) (*user.
 	if !ok {
 		return &user.BaseResp{Code: errcode.Unauthorized, Msg: errcode.Msg(errcode.Unauthorized)}, nil
 	}
-	if len(in.OldPassword) < minPasswordLength || len(in.OldPassword) > maxPasswordLength ||
-		len(in.NewPassword) < minPasswordLength || len(in.NewPassword) > maxPasswordLength {
+	// Do not apply the new minimum length to the old password: existing accounts
+	// may still hold shorter legacy passwords and must be able to change them.
+	if len(in.OldPassword) == 0 || len(in.OldPassword) > maxPasswordLength || !validPassword(in.NewPassword) {
 		return &user.BaseResp{Code: errcode.BadRequest, Msg: errcode.Msg(errcode.BadRequest)}, nil
 	}
 	if in.OldPassword == in.NewPassword {

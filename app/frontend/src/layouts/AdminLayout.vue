@@ -7,6 +7,7 @@ import BrandLogo from '@/components/BrandLogo.vue'
 import { useUserStore } from '@/stores/user'
 import { changePassword, logout as logoutApi } from '@/api/user'
 import { mallUrl, openInNewTab } from '@/utils/portal'
+import { passwordRule } from '@/utils/validation'
 
 const router = useRouter()
 const route = useRoute()
@@ -25,7 +26,7 @@ const passwordRules: FormRules = {
   old_password: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
   new_password: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, max: 72, message: '密码长度为 6-72 个字符', trigger: 'blur' },
+    passwordRule,
   ],
   confirm_password: [
     {
@@ -148,7 +149,7 @@ async function submitPassword() {
         <el-input v-model="passwordForm.old_password" type="password" show-password />
       </el-form-item>
       <el-form-item label="新密码" prop="new_password">
-        <el-input v-model="passwordForm.new_password" type="password" show-password placeholder="6-72 个字符" />
+        <el-input v-model="passwordForm.new_password" type="password" show-password placeholder="8-72 位，含字母和数字" />
       </el-form-item>
       <el-form-item label="确认密码" prop="confirm_password">
         <el-input v-model="passwordForm.confirm_password" type="password" show-password />
