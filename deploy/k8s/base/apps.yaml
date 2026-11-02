@@ -172,14 +172,13 @@ metadata:
   name: user-api
   namespace: mall
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: user-api
   ports:
     - name: http
       port: 8000
       targetPort: 8000
-      nodePort: 30000
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -337,14 +336,13 @@ metadata:
   name: order-api
   namespace: mall
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: order-api
   ports:
     - name: http
       port: 8001
       targetPort: 8001
-      nodePort: 30001
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -497,14 +495,13 @@ metadata:
   name: product-api
   namespace: mall
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
     app: product-api
   ports:
     - name: http
       port: 8002
       targetPort: 8002
-      nodePort: 30002
 ---
 apiVersion: apps/v1
 kind: Deployment

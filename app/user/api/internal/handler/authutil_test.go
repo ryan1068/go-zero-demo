@@ -59,6 +59,23 @@ func TestClientIP_FallsBackToRawRemoteAddr(t *testing.T) {
 	}
 }
 
+func TestClientIP_FallsBackToIPv6RemoteAddr(t *testing.T) {
+	req := mustRequest(t, "[2001:db8::1]:443")
+
+	if got := clientIP(req); got != "2001:db8::1" {
+		t.Fatalf("clientIP() = %q, want %q", got, "2001:db8::1")
+	}
+}
+
+func TestClientIP_IgnoresForwardedForWhenAllHopsInvalid(t *testing.T) {
+	req := mustRequest(t, "192.0.2.10:1234")
+	req.Header.Set("X-Forwarded-For", "spoofed, garbage")
+
+	if got := clientIP(req); got != "192.0.2.10" {
+		t.Fatalf("clientIP() = %q, want %q", got, "192.0.2.10")
+	}
+}
+
 func mustRequest(t *testing.T, remoteAddr string) *http.Request {
 	t.Helper()
 	req, err := http.NewRequest(http.MethodGet, "/user/login", nil)

@@ -14,16 +14,7 @@ ports:
   - port: 8081:30081
     nodeFilters:
       - loadbalancer
-  # API 与网关
-  - port: 8000:30000
-    nodeFilters:
-      - loadbalancer
-  - port: 8001:30001
-    nodeFilters:
-      - loadbalancer
-  - port: 8002:30002
-    nodeFilters:
-      - loadbalancer
+  # 网关；API 保持 ClusterIP，仅经前端 nginx 访问，避免绕过限流
   - port: 8888:30088
     nodeFilters:
       - loadbalancer

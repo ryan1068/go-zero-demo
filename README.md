@@ -139,7 +139,7 @@ make k8s-down    # 删除集群
 - 镜像代理：`deploy/k8s/registries.yaml`，docker.io / ghcr.io 走国内镜像站
 - 默认禁用 Traefik，避免首次启动卡在 Ingress 镜像拉取；需要 Ingress 时再单独安装
 - 首次启动 CoreDNS、metrics-server 等系统镜像需要拉取，可能耗时 5–10 分钟
-- host 端口：8080/8081（前端）、8000–8002（API）、8888（网关）；8090/8443 预留给后续 Ingress
+- host 端口：8080/8081（前端）、8888（网关）；API 仅集群内访问，避免绕过 nginx 直连；8090/8443 预留给后续 Ingress
 - k3s 版本由 k3d 默认值决定，升级 k3d 后重建集群即可
 
 ### 部署应用到 k8s
@@ -179,7 +179,7 @@ make compose-on    # 切回 Compose（先 make k8s-stop）
 
 Compose 容器的数据卷不会被删除。
 
-访问地址与 Compose 一致：`localhost:8080` 管理后台、`localhost:8081` 商城、`localhost:8000-8002` API、`localhost:8888` 网关。
+访问地址：`localhost:8080` 管理后台、`localhost:8081` 商城、`localhost:8888` 网关。k8s 中 API 为 ClusterIP，需要直连时用 `kubectl -n mall port-forward svc/user-api 8000:8000`。
 
 回滚前先备份 k8s 侧数据：
 
@@ -233,16 +233,18 @@ GOBIN=/tmp/protogen-build GOPROXY=https://goproxy.cn,direct \
 
 ## API 示例
 
+以下示例使用 Compose 的本地端口；k8s 环境请先 `kubectl -n mall port-forward`。
+
 ```bash
-# 注册
+# 注册（密码至少 8 个字符，且包含字母和数字）
 curl -s -X POST localhost:8000/user/register \
   -H 'Content-Type: application/json' \
-  -d '{"username":"buyer","password":"123456"}'
+  -d '{"username":"buyer","password":"buyer1234"}'
 
 # 登录
 TOKEN=$(curl -s -X POST localhost:8000/user/login \
   -H 'Content-Type: application/json' \
-  -d '{"username":"buyer","password":"123456"}' | jq -r .data.token)
+  -d '{"username":"buyer","password":"buyer1234"}' | jq -r .data.token)
 
 # 商品列表
 curl -s 'localhost:8002/products?page=1&page_size=10'

@@ -113,9 +113,10 @@ func validCreateUserInput(username, password, nickname, email, phone, avatar, re
 	return (status == 0 || status == 1) && (role == 0 || role == 1 || role == 2)
 }
 
-// validPassword requires 8-72 bytes with at least one ASCII letter and digit.
+// validPassword requires at least 8 characters, at most 72 bytes (bcrypt's
+// limit), and at least one ASCII letter and digit.
 func validPassword(password string) bool {
-	if len(password) < minPasswordLength || len(password) > maxPasswordLength {
+	if utf8.RuneCountInString(password) < minPasswordLength || len(password) > maxPasswordLength {
 		return false
 	}
 
