@@ -21,8 +21,8 @@ check_app() {
   case "$src" in
     app/user/api)
       # Hand-written: login injects client IP, logout passes the bearer token,
-      # authutil provides the client IP helper.
-      excludes=(-x loginhandler.go -x logouthandler.go -x authutil.go)
+      # authutil provides the client IP helper and its tests.
+      excludes=(-x loginhandler.go -x logouthandler.go -x authutil.go -x authutil_test.go)
       ;;
     app/product/api)
       # goctl cannot generate multipart upload or static file responses.

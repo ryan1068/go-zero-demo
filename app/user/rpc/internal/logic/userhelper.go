@@ -19,7 +19,7 @@ import (
 const (
 	minUsernameLength = 3
 	maxUsernameLength = 64
-	minPasswordLength = 6
+	minPasswordLength = 8
 	maxPasswordLength = 72
 	maxNicknameLength = 255
 	maxEmailLength    = 128
@@ -97,7 +97,7 @@ func validCreateUserInput(username, password, nickname, email, phone, avatar, re
 	if utf8.RuneCountInString(username) < minUsernameLength || utf8.RuneCountInString(username) > maxUsernameLength {
 		return false
 	}
-	if len(password) < minPasswordLength || len(password) > maxPasswordLength {
+	if !validPassword(password) {
 		return false
 	}
 	if utf8.RuneCountInString(nickname) > maxNicknameLength ||
@@ -111,4 +111,23 @@ func validCreateUserInput(username, password, nickname, email, phone, avatar, re
 		return false
 	}
 	return (status == 0 || status == 1) && (role == 0 || role == 1 || role == 2)
+}
+
+// validPassword requires at least 8 characters, at most 72 bytes (bcrypt's
+// limit), and at least one ASCII letter and digit.
+func validPassword(password string) bool {
+	if utf8.RuneCountInString(password) < minPasswordLength || len(password) > maxPasswordLength {
+		return false
+	}
+
+	var hasLetter, hasDigit bool
+	for _, r := range password {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z':
+			hasLetter = true
+		case r >= '0' && r <= '9':
+			hasDigit = true
+		}
+	}
+	return hasLetter && hasDigit
 }
